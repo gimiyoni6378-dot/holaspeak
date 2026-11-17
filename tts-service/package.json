@@ -1,0 +1,12 @@
+{
+  "name": "holaspeak-tts-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": { "node": ">=22" },
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "@google-cloud/text-to-speech": "^6.2.0",
+    "express": "^5.1.0"
+  }
+}
