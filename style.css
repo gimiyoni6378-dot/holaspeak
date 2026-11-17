@@ -31,3 +31,8 @@ body{font-family:'Nunito Sans','Gowun Dodum',sans-serif;background:#f2efe7}
 :focus-visible{outline:3px solid #e9ad3d;outline-offset:2px}
 button{transition:transform .14s ease,background-color .14s ease}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.quests button>i{flex:0 0 36px}
+.quests button>i svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button .nav-icon{display:grid;place-items:center;width:38px;height:31px;font-size:0}
+nav button .nav-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button:nth-child(3) .nav-icon{width:42px;height:38px;margin-top:-13px;padding:5px 12px;background:var(--coral);color:#fff;border-radius:13px;box-shadow:0 4px 9px #ef765b35}
