@@ -189,4 +189,10 @@ button:active{transform:scale(.985)}
   .mission-content{gap:8px!important}.mission-copy [data-type="body"]{font-size:.77rem}
   .mission-copy [data-type="supporting"]{font-size:.67rem}
 }
+.mission-button>span:first-child>span:first-child{display:flex!important;width:100%!important;min-width:0;align-items:center}
+.mission-button .mission-content{max-width:none!important}
+.mission-status{margin-inline-start:auto!important}
+.home-hero .hero-title,.home-hero [data-astryx-component="Text"]{color:var(--color-on-dark)!important}
+.home-hero .hero-meta{opacity:.82}
+.home-hero .hero-copy [data-astryx-component="Text"][data-color="secondary"]{opacity:.9}
 
