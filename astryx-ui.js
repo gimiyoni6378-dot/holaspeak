@@ -6,12 +6,12 @@ import {
   Badge,
   Button,
   Card,
-  Heading,
   ProgressBar,
   Stack,
   Text,
   Theme,
 } from '@astryxdesign/core';
+import { Heading } from '@astryxdesign/core/Heading';
 import { themes, defaultThemeSlug, themeModes } from './src/astryx-themes.js';
 
 const h = htm.bind(React.createElement);
