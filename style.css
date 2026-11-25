@@ -252,4 +252,6 @@ nav button:nth-child(3) .nav-icon{background:#d8664b;box-shadow:0 4px 9px #d8664
  .hero-art{min-height:10.5rem}
  .hero-copy .hero-title{font-size:1.38rem!important}
 }
+.mission-button:nth-child(2) .mission-icon{background:#eaf0ec!important;color:#557767!important}
+@media(min-width:381px) and (max-width:430px){.home-hero{grid-template-columns:minmax(0,1fr) 7.5rem}}
 
