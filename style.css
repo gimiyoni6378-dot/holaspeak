@@ -105,3 +105,17 @@ nav button:nth-child(3) .nav-icon{width:42px;height:38px;margin-top:-13px;paddin
 .journey-all{padding-inline:var(--spacing-1)!important}
 .astryx-home .astryx-card{border-color:var(--color-border)}
 @media(max-width:380px){.home-hero{grid-template-columns:minmax(0,1fr) 6rem;padding:var(--spacing-3)!important}.hero-art>span{font-size:2.7rem}.hero-art>b{font-size:3rem}.hero-copy .hero-title{font-size:1.8rem!important}}
+
+/* Keep the daily mission legible at phone widths. */
+@media(max-width:430px){
+  .home-hero{grid-template-columns:minmax(0,1fr) 6.25rem;gap:var(--spacing-2);min-height:14rem;padding:var(--spacing-3)!important}
+  .hero-copy{width:auto;max-width:none;min-width:0}
+  .hero-copy .hero-title{font-size:1.55rem!important;line-height:1.18!important;word-break:keep-all}
+  .hero-copy [data-astryx-component="Text"]{word-break:keep-all}
+  .hero-copy .hero-meta{flex-wrap:wrap;gap:.35rem!important}
+  .hero-cta{max-width:100%;white-space:nowrap;font-size:.72rem!important;padding-inline:.55rem!important}
+  .hero-art>span{font-size:2.65rem}
+  .hero-art>b{font-size:3rem}
+  .hero-art>i{font-size:.65rem}
+}
+
