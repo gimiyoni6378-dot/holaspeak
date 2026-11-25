@@ -197,4 +197,6 @@ button:active{transform:scale(.985)}
 .home-hero .hero-copy [data-astryx-component="Text"][data-color="secondary"]{opacity:.9}
 .home-hero .hero-meta,.home-hero .hero-meta [data-astryx-component="Text"]{color:var(--color-on-dark)!important;opacity:1!important}
 .home-hero .hero-meta [data-color="secondary"]{color:var(--color-on-dark)!important}
+.brand{gap:7px}
+.brand-icon{display:block;width:27px;height:27px;flex:0 0 27px;border:1px solid #245743;border-radius:8px;object-fit:cover}
 
