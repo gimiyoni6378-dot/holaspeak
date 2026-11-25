@@ -52,7 +52,7 @@ function HomeDashboard() {
           <${Stack} gap=${1}>
             <${Text} type="supporting" color="secondary"><span id="today"></span></${Text}>
             <${Heading} level=${1} className="welcome-title">¡Hola, 민지!</${Heading}>
-            <${Text} color="secondary">오늘도 스페인어 한 걸음, 같이 가요.</${Text}>
+            <${Text} color="secondary">오늘은 짧은 인사부터 익혀봐요.</${Text}>
           </${Stack}>
           <${Badge} variant="success" label="A1 · 첫걸음" />
         </${Stack}>
