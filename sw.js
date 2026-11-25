@@ -1,4 +1,4 @@
-const CACHE_NAME = 'holaspeak-shell-v4';
+const CACHE_NAME = 'holaspeak-shell-v5';
 const APP_SHELL = [
   './',
   './index.html',

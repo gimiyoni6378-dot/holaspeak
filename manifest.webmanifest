@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Hola — 스페인어 미션",
-  "short_name": "Hola",
+  "name": "HolaSpeak — 스페인어 미션",
+  "short_name": "HolaSpeak",
   "description": "초보자를 위한 짧고 쉬운 스페인어 학습 미션",
   "lang": "ko-KR",
   "start_url": "./",
