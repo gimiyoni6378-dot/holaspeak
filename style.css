@@ -119,3 +119,7 @@ nav button:nth-child(3) .nav-icon{width:42px;height:38px;margin-top:-13px;paddin
   .hero-art>i{font-size:.65rem}
 }
 
+/* Keep nested Astryx button content in a compact horizontal row. */
+.pronunciation-link>span:first-child{display:flex;flex-direction:row!important;align-items:center;gap:var(--spacing-3);width:100%;min-width:0;text-align:left}
+.pronunciation-link .pronunciation-mark{width:2.75rem;height:2.75rem;flex:0 0 2.75rem;align-self:center}
+
