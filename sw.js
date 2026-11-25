@@ -1,4 +1,4 @@
-const CACHE_NAME = 'holaspeak-shell-v6';
+const CACHE_NAME = 'holaspeak-shell-v7';
 const APP_SHELL = [
   './',
   './index.html',
@@ -53,7 +53,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(async () => (await caches.match(request)) || (await caches.match('./index.html')),
+        .catch(async () => (await caches.match(request)) || (await caches.match('./index.html'))),
     );
     return;
   }
@@ -70,3 +70,4 @@ self.addEventListener('fetch', (event) => {
     }),
   );
 });
+
