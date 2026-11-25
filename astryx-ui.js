@@ -54,39 +54,39 @@ function HomeDashboard() {
             <${Heading} level=${1} className="welcome-title">¡Hola, 민지!</${Heading}>
             <${Text} color="secondary">오늘도 스페인어 한 걸음, 같이 가요.</${Text}>
           </${Stack}>
-          <${Stack} as="span" className="welcome-sun" aria-hidden="true">☀️</${Stack}>
+          <${Badge} variant="success" label="A1 · 첫걸음" />
         </${Stack}>
 
         <${Card} variant="green" elevation="med" padding=${4} className="home-hero">
           <${Stack} gap=${3} className="hero-copy">
-            <${Badge} variant="info" label="오늘의 여정" />
-            <${Heading} level=${2} className="hero-title">인사부터<br />천천히 시작해요</${Heading}>
-            <${Text} as="p" color="secondary">뜻과 발음을 먼저 익히고, 쉬운 퀴즈를 풀어요.</${Text}>
+            <${Badge} variant="info" label="오늘의 미션 · 01" />
+            <${Heading} level=${2} className="hero-title">첫 인사,<br />한마디부터</${Heading}>
+            <${Text} as="p" color="secondary">스페인어 인사 세 개를 듣고 말해봐요.</${Text}>
             <${Stack} direction="horizontal" gap=${2} align="center" className="hero-meta">
-              <${Text} type="supporting">약 3분</${Text}><span aria-hidden="true">·</span><${Text} type="supporting">완전 초보 1단계</${Text}>
+              <${Text} type="supporting">3분</${Text}><span aria-hidden="true">·</span><${Text} type="supporting">초보 단계</${Text}>
             </${Stack}>
-            <${Button} variant="primary" size="lg" label="오늘의 미션 시작" data-lesson="" className="hero-cta">
-              오늘의 미션 시작 <span aria-hidden="true">→</span>
+            <${Button} variant="primary" size="lg" label="미션 시작" data-lesson="" className="hero-cta">
+              미션 시작 <span aria-hidden="true">→</span>
             </${Button}>
           </${Stack}>
           <span className="hero-art" aria-hidden="true">
-            <span>☀️</span><b>👋</b><i>¡hola!</i>
+            <span>01</span><b>hola</b><i>올라</i>
           </span>
         </${Card}>
 
         <${Stack} as="section" gap=${2} className="home-section">
           <${Stack} direction="horizontal" align="end" justify="between" className="section-heading">
             <${Stack} gap=${0.5}>
-              <${Text} type="label" color="secondary">오늘의 체크리스트</${Text}>
+              <${Text} type="label" color="secondary">3분 학습</${Text}>
               <${Heading} level=${2}>작은 미션, 큰 한 걸음</${Heading}>
             </${Stack}>
         <${Text} id="qcount" type="label" color="accent">0/3</${Text}>
           </${Stack}>
           <${Card} elevation="low" padding=${1} className="mission-list">
             <${Stack} gap=${0}>
-              <${MissionButton} icon="✎" title="오늘의 레슨 완료하기" description="인사 표현 3개 · 쉬운 퀴즈" mission="lesson" />
-              <${MissionButton} icon="↻" title="단어 복습 6개" description="뜻과 발음을 함께 떠올려요" mission="review" />
-              <${MissionButton} icon="〰" title="소리 내어 한 단어" description="Hola · 올라 · 안녕" mission="speak" />
+              <${MissionButton} icon="01" title="인사 표현 익히기" description="단어 3개 · 쉬운 퀴즈" mission="lesson" />
+              <${MissionButton} icon="02" title="단어 카드 복습" description="뜻과 발음을 떠올려요" mission="review" />
+              <${MissionButton} icon="03" title="한 단어 말해보기" description="Hola · 올라 · 안녕" mission="speak" />
             </${Stack}>
           </${Card}>
         </${Stack}>
@@ -194,3 +194,4 @@ export function mountHome() {
 
 const installMount = document.querySelector('#astryx-install-root');
 if (installMount) createRoot(installMount).render(h`<${InstallCard} />`);
+
