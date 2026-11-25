@@ -59,7 +59,7 @@ function HomeDashboard() {
 
         <${Card} variant="green" elevation="med" padding=${4} className="home-hero">
           <${Stack} gap=${3} className="hero-copy">
-            <${Badge} variant="info" label="오늘의 미션 · 01" />
+            <${Badge} variant="warning" label="오늘의 미션 · 01" />
             <${Heading} level=${2} className="hero-title">첫 인사,<br />한마디부터</${Heading}>
             <${Text} as="p" color="secondary">스페인어 인사 세 개를 듣고 말해봐요.</${Text}>
             <${Stack} direction="horizontal" gap=${2} align="center" className="hero-meta">
