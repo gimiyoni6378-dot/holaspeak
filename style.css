@@ -200,3 +200,56 @@ button:active{transform:scale(.985)}
 .brand{gap:7px}
 .brand-icon{display:block;width:27px;height:27px;flex:0 0 27px;border:1px solid #245743;border-radius:8px;object-fit:cover}
 
+/* Global palette refresh: cool white surfaces with forest and coral accents. */
+:root{--paper:#f3f6f4;--ink:#202b27;--muted:#6d7972;--line:#e1e8e4;--green:#245743;--coral:#d8664b;--gold:#e5eee8}
+body{background:#f1f5f2;color:#202b27}
+.app{background:#fdfefd}
+.top{background:#fdfefd;border-bottom-color:#e7ece8}
+.top-metrics .streak-chip,.top-metrics .xp-chip{background:#fff;border-color:#e1e8e4}
+.avatar{background:#e6eee8;border-color:#dce7df;color:#315843}
+.view{background:#fdfefd}
+.home-hero{background:#eaf2ed;color:#20372d;grid-template-columns:minmax(0,1fr) 7rem;min-height:15rem;border:1px solid #deebe2}
+.home-hero .hero-title{color:#20372d!important}
+.home-hero .hero-copy>p{color:#51665a!important}
+.home-hero .hero-meta,.home-hero .hero-meta [data-color="secondary"]{color:#51665a!important}
+.hero-cta{background:#d8664b!important;color:#fff!important;border:0!important;box-shadow:none!important}
+.home-hero [data-variant="warning"]{background:#dcebe2!important;color:#285b43!important}
+.hero-art{display:grid;grid-template-rows:minmax(0,1fr) auto;align-items:center;justify-items:center;gap:2px;min-height:12rem;padding:7px 4px 9px;border:1px solid #e5ece7;border-radius:15px;background:#fdfefd;overflow:hidden}
+.hero-mascot{display:block;width:100%;height:100%;min-height:0;object-fit:contain;object-position:center bottom}
+.hero-art-word{font:700 .72rem 'Figtree','Noto Sans KR',sans-serif;letter-spacing:.015em;color:#315843}
+.hero-art-word i{margin-inline-start:3px;font-style:normal;font-weight:500;color:#77847c}
+.hero-copy .hero-title{font-size:1.65rem!important}
+.hero-copy .hero-meta{opacity:1}
+.astryx-home [data-variant="warning"]{background:#e5eee8!important;color:#315843!important}
+.week-days>span:nth-child(3){border-color:#bad0c2;background:#edf4ef;color:#315843}
+.weekly-card [data-variant="warning"]{background:#e5eee8!important;color:#315843!important}
+.view .title{color:#202b27}
+.view .title small,.view .heading small,.view .level>small,.view .map article small{color:#6d7972}
+.view .level,.view .monthly,.view .badge,.view .leaders,.view .records,.view .stats div,.view .summary{background:#fff;border-color:#e1e8e4;box-shadow:none}
+.view .monthly{background:#f1f5f2}
+.view .monthly>b{border-color:#dbe7df;border-right-color:#315843}
+.view .map label{background:#edf4ef;color:#315843}
+.view .map article>i{background:#f3f6f4;border-color:#e1e8e4}
+.view .map article>i.now{background:#e1eee6;border-color:#fff;box-shadow:0 0 0 2px #a9c6b3}
+.view .profile>i{background:#e5eee8;color:#315843}
+.view .game.blue{background:#557767}
+.view .league-hero{background:#244b3b}
+.view .note{background:#edf4ef;color:#3f5c4b}
+.view .install-card{background:#edf4ef;border-color:#dce7df}
+.view .install-icon{background:#fff;color:#d8664b}
+.view .install-button{background:#245743}
+.primary{background:#d8664b;color:#fff;box-shadow:none}
+nav{background:#fdfefd;border-top-color:#e1e8e4}
+nav button:nth-child(3) .nav-icon{background:#d8664b;box-shadow:0 4px 9px #d8664b2b}
+.offline-notice{background:#edf4ef;color:#425b4d}
+@media(max-width:430px){
+ .home-hero{grid-template-columns:minmax(0,1fr) 6.5rem;gap:10px;min-height:14rem}
+ .hero-art{min-height:11.5rem}
+ .hero-copy .hero-title{font-size:1.52rem!important}
+}
+@media(max-width:360px){
+ .home-hero{grid-template-columns:minmax(0,1fr) 5.6rem;gap:8px}
+ .hero-art{min-height:10.5rem}
+ .hero-copy .hero-title{font-size:1.38rem!important}
+}
+

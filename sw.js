@@ -1,4 +1,4 @@
-const CACHE_NAME = 'holaspeak-shell-v14';
+const CACHE_NAME = 'holaspeak-shell-v15';
 const APP_SHELL = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const APP_SHELL = [
   './tts-config.js',
   './manifest.webmanifest',
   './icons/favicon.png',
+  './assets/mascot/hola-bull-happy-web.png',
   './icons/hola-192.png',
   './icons/hola-512.png',
   './icons/apple-touch-icon.png',

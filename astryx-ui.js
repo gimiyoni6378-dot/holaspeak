@@ -70,7 +70,8 @@ function HomeDashboard() {
             </${Button}>
           </${Stack}>
           <span className="hero-art" aria-hidden="true">
-            <span>01</span><b>hola</b><i>올라</i>
+            <img className="hero-mascot" src="./assets/mascot/hola-bull-happy-web.png" alt="" />
+            <span className="hero-art-word">hola <i>올라</i></span>
           </span>
         </${Card}>
 
