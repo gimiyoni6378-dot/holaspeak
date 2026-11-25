@@ -103,6 +103,21 @@ nav button:nth-child(3) .nav-icon{width:42px;height:38px;margin-top:-13px;paddin
 .journey-icon.pronunciation{color:var(--color-text-accent);font-weight:800}
 .journey-copy{flex:1;min-width:0}
 .journey-all{padding-inline:var(--spacing-1)!important}
+.signup-flow{max-width:29rem;margin-inline:auto;text-align:center;padding-block:var(--spacing-3)}
+.signup-kicker{display:inline-flex;border-radius:var(--radius-full);background:var(--color-accent-muted);color:var(--color-text-accent);padding:var(--spacing-1) var(--spacing-3);font-size:.78rem;font-weight:700}
+.signup-illustration{display:grid;place-items:center;width:4.5rem;aspect-ratio:1;margin:var(--spacing-4) auto var(--spacing-2);border-radius:var(--radius-container);background:var(--color-background-muted);font-size:2rem}
+.signup-flow .modal-head{font-size:1.55rem!important}
+.signup-flow>p{max-width:24rem;margin:0 auto var(--spacing-3);color:var(--color-text-secondary)}
+.signup-perks{display:grid;gap:var(--spacing-1);margin:var(--spacing-3) 0 var(--spacing-4);padding:var(--spacing-3);border-radius:var(--radius-container);background:var(--color-background-muted);text-align:left}
+.signup-perks span{font-size:.86rem;color:var(--color-text-secondary)}
+.signup-option{display:flex;width:100%;align-items:center;gap:var(--spacing-3);padding:var(--spacing-3);margin-top:var(--spacing-2);border:1px solid var(--color-border);border-radius:var(--radius-element);background:var(--color-background-card);color:var(--color-text-primary);text-align:left;cursor:pointer}
+.signup-option>span:first-child{display:grid;place-items:center;width:2.5rem;aspect-ratio:1;border:1px solid var(--color-border);border-radius:var(--radius-inner);font-weight:800}
+.signup-option>span:nth-child(2){display:grid;flex:1;gap:var(--spacing-0)}
+.signup-option small{color:var(--color-text-secondary)}
+.signup-option.google>span:first-child{color:var(--color-text-accent)}
+.signup-option:hover{border-color:var(--color-border-emphasized)}
+.signup-status{min-height:2.5rem;margin-top:var(--spacing-3)!important;padding:var(--spacing-2);border-radius:var(--radius-inner);background:var(--color-background-muted);font-size:.78rem!important}
+.signup-skip{margin-top:var(--spacing-2);border:0;background:transparent;color:var(--color-text-secondary);text-decoration:underline;cursor:pointer}
 .astryx-home .astryx-card{border-color:var(--color-border)}
 @media(max-width:380px){.home-hero{grid-template-columns:minmax(0,1fr) 6rem;padding:var(--spacing-3)!important}.hero-art>span{font-size:2.7rem}.hero-art>b{font-size:3rem}.hero-copy .hero-title{font-size:1.8rem!important}}
 
