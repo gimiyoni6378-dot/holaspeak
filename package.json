@@ -1,0 +1,13 @@
+{
+  "name": "holaspeak",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mobile-first Spanish learning PWA with Astryx UI components",
+  "dependencies": {
+    "@astryxdesign/cli": "0.7.17",
+    "@astryxdesign/core": "0.7.17",
+    "htm": "3.1.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  }
+}

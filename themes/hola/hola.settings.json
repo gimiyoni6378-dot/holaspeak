@@ -1,0 +1,73 @@
+{
+  "name": "hola",
+  "mode": "light-only",
+  "settings": [
+    {
+      "thing": "corners",
+      "value": "large",
+      "source": "dial"
+    },
+    {
+      "thing": "spacing",
+      "value": "compact",
+      "source": "dial"
+    },
+    {
+      "thing": "accent",
+      "value": "#315f49",
+      "source": "dial"
+    },
+    {
+      "thing": "neutral",
+      "value": "#aca999",
+      "source": "dial"
+    },
+    {
+      "thing": "font",
+      "value": "Figtree, Gowun Dodum, sans-serif",
+      "source": "dial"
+    },
+    {
+      "thing": "surfaces",
+      "value": "raised",
+      "source": "dial"
+    },
+    {
+      "thing": "buttons",
+      "value": "soft",
+      "source": "dial"
+    },
+    {
+      "thing": "type",
+      "value": "standard",
+      "source": "dial"
+    },
+    {
+      "thing": "warning",
+      "value": "#8a5a00",
+      "source": "dial"
+    },
+    {
+      "thing": "danger",
+      "value": "#d06f58",
+      "source": "dial"
+    },
+    {
+      "thing": "--color-on-info-muted",
+      "value": "#000000",
+      "source": "token",
+      "on": "banner",
+      "mode": "light"
+    },
+    {
+      "thing": "--color-on-success-muted",
+      "value": "#000000",
+      "source": "token",
+      "on": "field-status",
+      "when": "type:success",
+      "mode": "light"
+    }
+  ],
+  "palette": "6ad6f1ec9ad9033bf9f531b4f0d317f44dd89f9bca734fbfa72e86e26b440e28",
+  "lifted": []
+}
