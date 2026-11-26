@@ -10,7 +10,7 @@ window.HOLA_FIREBASE_CONFIG = {
 };
 window.HOLA_ENABLE_TTS = true;
 window.HOLA_TTS_PROVIDER = 'azure';
-window.HOLA_TTS_API_URL = ''; // Cloudflare Worker URL, after Free/F0 setup.
+window.HOLA_TTS_API_URL = ''; // Vercel API URL, after Hobby/F0 setup.
 window.HOLA_ENABLE_SPEECH = false; // Enable only after real microphone smoke test.
-window.HOLA_API_URL = ''; // Same Cloudflare Worker URL, no trailing slash.
+window.HOLA_API_URL = ''; // Same Vercel API URL, no trailing slash.
 window.HOLA_GOOGLE_CLIENT_ID = ''; // Legacy backend only; Firebase handles Google login.

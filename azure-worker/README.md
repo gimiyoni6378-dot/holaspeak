@@ -1,4 +1,6 @@
-# Azure Speech 연결 (Firebase Spark 유지)
+# Azure Speech 연결 (이전 Cloudflare 초안)
+
+현재 선택은 Vercel Hobby입니다. 현재 설정은 루트 VERCEL-SETUP.md를 따릅니다. 이 Worker는 배포하지 않으며 Vercel과 함께 활성화하지 않습니다.
 
 현재 상태: 코드와 로컬 검증 준비. Azure/Cloudflare 계정 리소스는 만들거나 배포하지 않았다. 실서비스 설정 전에는 `SPEECH_ENABLED=false`이며 앱의 평가 버튼도 비활성이다.
 

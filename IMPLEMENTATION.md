@@ -1,12 +1,12 @@
 # HolaSpeak 구현 상태
 
-## 현재 선택: Firebase Spark + Azure Speech
+## 현재 선택: Firebase Spark + Vercel Hobby + Azure Speech F0
 
-사용자가 확인한 Google/이메일 로그인·출석·계정 기록 복원은 유지한다. Google TTS 및 Blaze 경로는 사용하지 않는다. `azure-worker/`의 Cloudflare Workers Free + SQLite Durable Object 중계 서버로 Azure Speech F0의 예시 TTS와 기본 발음 평가를 연결한다. 실제 Azure 계정·리소스·키는 아직 없으며 Worker 배포도 하지 않았다.
+Google/이메일 로그인·출석·계정 기록 복원은 유지한다. Vercel 팀 `agent-office3`의 Hobby 무료 요금제를 인앱 브라우저에서 확인했다. 루트 `api/speech.js`의 Node.js 함수와 `server/` 모듈로 Azure Speech F0의 Neural TTS·기본 발음 평가를 연결한다. Azure 리소스 지역은 사용자가 확인한 `eastus`다. 실제 서비스 키는 아직 서버에 설정하지 않았다.
 
-구현: Firebase ID 토큰 서버 검증, 문장·목소리·속도·음높이별 MP3 캐시, 모든 사용자 합산 월별 한도와 개인별 일일 한도, 녹음마다 신규 발음 평가와 UUID, Firestore 개인 평가 이력, 평가 재호출 없는 저장 재시도. 녹음과 평가 응답은 서버 캐시에 저장하지 않는다. 자세한 설정 및 제한은 `azure-worker/README.md`를 따른다.
+서버는 Firebase ID 토큰을 검증하고 Firestore `_speechAudio`에 예시 MP3 캐시, `_speechUsage`에 트랜잭션 사용량 카운터·생성 lease를 저장한다. 캐시는 문장·음성·속도·음높이별이며, 녹음은 동일 입력도 매번 새 평가·새 UUID를 사용한다. 사용자별 평가 이력은 기존 Firestore 개인 경로에 저장한다. 녹음과 평가 응답은 서버 캐시에 보관하지 않는다. Firebase Spark·Vercel Hobby·Azure F0를 유지하며 유료 업그레이드는 진행하지 않는다. 환경변수와 실제 검증 절차는 `VERCEL-SETUP.md`를 따른다.
 
-아래는 이전 설계 기록이며 Google TTS·SQLite 인증 서버·전체 초기화 설명은 현재 운영 경로가 아니다. 현재 학습 초기화는 진행도만 초기화하며 평가 이력을 삭제하지 않는다.
+`azure-worker/`는 이전 Cloudflare 미배포 초안이다. 현재 배포하지 않으며 Vercel과 함께 활성화하지 않는다. 아래는 이전 설계 기록이며 Google TTS·SQLite 인증 서버·전체 초기화 설명은 현재 운영 경로가 아니다. 현재 학습 초기화는 진행도만 초기화하며 평가 이력을 삭제하지 않는다.
 
 ## 이전 설계 기록
 

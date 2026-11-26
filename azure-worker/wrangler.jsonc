@@ -8,7 +8,7 @@
   "vars": {
     "FIREBASE_PROJECT_ID": "holaspeak-ac16d",
     "ALLOWED_ORIGIN": "https://gimiyoni6378-dot.github.io",
-    "AZURE_SPEECH_REGION": "",
+    "AZURE_SPEECH_REGION": "eastus",
     "SPEECH_ENABLED": "false"
   },
   "durable_objects": {

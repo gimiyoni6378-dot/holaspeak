@@ -41,8 +41,8 @@ python -m http.server 5173
 
 ## 음성: Azure Speech + Firebase Spark (연결 준비)
 
-예시 TTS와 기본 발음 평가는 Azure Speech, 사용자 인증·학습·출석·평가 이력은 Firebase Spark를 사용합니다. Azure 키를 보호할 Cloudflare Workers Free 중계 서버를 `azure-worker/`에 준비했습니다. 아직 Azure 리소스·키·Worker 배포가 없어 실제 Azure 호출은 비활성입니다. 준비 중에는 기기의 스페인어 음성으로 예시를 듣습니다.
+예시 TTS와 기본 발음 평가는 Azure Speech, 사용자 인증·학습·출석·평가 이력은 Firebase Spark를 사용합니다. Azure 키를 보호할 Vercel Hobby 중계 서버를 루트 `api/`와 `server/`에 준비했습니다. 캐시와 사용량은 기존 Firestore에 저장합니다. Azure 리소스 지역은 `eastus`이며, 서버에 키를 설정하고 실제 요청을 검증하기 전까지 Azure 호출은 비활성입니다. 준비 중에는 기기의 스페인어 음성으로 예시를 듣습니다.
 
-[설정과 검증 절차](azure-worker/README.md)를 따릅니다. Azure Speech **F0** 무료 범위는 TTS 월 50만 자, STT 월 5시간이며 서버에서 보수적 사용량 예약과 한도 차단을 적용합니다. Blaze 전환은 필요하지 않습니다. 예시 음성만 설정별 캐시하고, 녹음은 매번 새로 평가합니다. 평가 점수와 문장만 계정 이력에 저장하며 녹음은 저장하지 않습니다.
+[설정과 검증 절차](VERCEL-SETUP.md)를 따릅니다. Azure Speech **F0** 무료 범위는 TTS 월 50만 자, STT 월 5시간이며 서버에서 보수적 사용량 예약과 한도 차단을 적용합니다. Blaze 전환은 필요하지 않습니다. 예시 음성만 설정별 캐시하고, 녹음은 매번 새로 평가합니다. 평가 점수와 문장만 계정 이력에 저장하며 녹음은 저장하지 않습니다.
 
 `functions/`의 Google Cloud TTS와 `tts-service/`는 이전 미배포 초안입니다. 현재 인증/음성 배포 경로가 아닙니다. `firebase.json`은 Firestore만 설정하며 Firebase 함수 배포 대상이 없습니다.

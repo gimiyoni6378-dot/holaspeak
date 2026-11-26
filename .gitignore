@@ -11,3 +11,5 @@ dist/
 .wrangler/
 .dry-run/
 .dev.vars*
+
+.vercel/
