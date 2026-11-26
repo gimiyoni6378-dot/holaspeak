@@ -88,7 +88,7 @@
 
   if ('serviceWorker' in navigator && window.isSecureContext) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', { scope: './' })
+      navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
         .catch((error) => console.warn('Hola offline support is unavailable.', error));
     });
   }

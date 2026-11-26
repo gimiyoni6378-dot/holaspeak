@@ -1,4 +1,4 @@
-const CACHE_NAME = 'holaspeak-shell-v22';
+const CACHE_NAME = 'holaspeak-shell-v23';
 const APP_SHELL = [
   './',
   './index.html',
@@ -28,7 +28,7 @@ const APP_SHELL = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => cache.addAll(APP_SHELL.map(path => new Request(path, { cache: 'reload' }))))
       .then(() => self.skipWaiting()),
   );
 });
@@ -52,7 +52,21 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   // Never cache identity, private progress or assessments, even on a same-origin API.
   if (request.headers.has('Authorization') || /\/(auth|me|progress|assessments|synthesize)(\/|$)/.test(url.pathname)) return;
-  if (request.cache === 'no-store') return;
+  if (request.cache === 'no-store' || request.cache === 'reload') return;
+
+  // Revalidate executable modules together on each online load. Cache-first JS
+  // can mix an updated entry with an older module that lacks a named export.
+  if (/\.(js|css)$/.test(url.pathname)) {
+    event.respondWith(
+      fetch(new Request(request, { cache: 'no-cache' }))
+        .then(async response => {
+          if (response.ok) { const cache = await caches.open(CACHE_NAME); await cache.put(request, response.clone()); }
+          return response;
+        })
+        .catch(async () => { const cached = await caches.match(request); if (cached) return cached; return Response.error(); }),
+    );
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(
