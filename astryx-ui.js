@@ -13,7 +13,8 @@ import {
 } from '@astryxdesign/core';
 import { Heading } from '@astryxdesign/core/Heading';
 import { themes, defaultThemeSlug, themeModes } from './src/astryx-themes.js';
-import { getSession } from './src/hola-client.js';
+import { getSession, loadProgress, subscribe, checkIn } from './src/hola-client.js';
+import { activitySummary } from './src/progression.js';
 
 const h = htm.bind(React.createElement);
 export const HolaTheme = ({ children }) => h`
@@ -44,6 +45,9 @@ function MissionButton({ icon, title, description, mission }) {
 
 function HomeDashboard() {
   const [daysDone, setDaysDone] = React.useState(0);
+  const [, updateAccount] = React.useReducer(value => value + 1, 0);
+  React.useEffect(() => subscribe(updateAccount), []);
+  const attendance = activitySummary(loadProgress().attendanceDates);
   window.holaSetProgress = setDaysDone;
 
   return h`
@@ -58,6 +62,10 @@ function HomeDashboard() {
           <${Badge} variant="success" label="A1 · 첫걸음" />
         </${Stack}>
 
+        <${Stack} direction="horizontal" align="center" justify="between" gap=${3}>
+          <${Stack} gap=${1}><${Text} weight="semibold">매일 한 걸음</${Text}><${Text} type="supporting">연속 출석 ${attendance.streak}일</${Text}></${Stack}>
+          <${Button} label=${attendance.today && getSession() ? '오늘 출석 완료' : '오늘 출석 체크'} isDisabled=${attendance.today && Boolean(getSession())} onClick=${() => { if (getSession()) checkIn(); else window.dispatchEvent(new Event('hola:open-profile')); }} />
+        </${Stack}>
         <${Card} variant="green" elevation="med" padding=${4} className="home-hero">
           <${Stack} gap=${3} className="hero-copy">
             <${Badge} variant="warning" label="오늘의 미션 · 01" />

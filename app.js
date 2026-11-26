@@ -19,6 +19,7 @@ $('#close').onclick=close;back.onclick=e=>{if(e.target===back)close()};document.
 function signupPrompt(){if(getSession())return;s.signupPromptSeen=true;save();open('');disposeModal=mountSignup(content)}
 function speaking(){if(!getSession()){signupPrompt();return}open('');disposeModal=mountSpeaking(content,()=>{if(!s.quests.speak){markStudy();s.quests.speak=true;s.xp+=5;save()}})}
 window.addEventListener('hola:open-speaking',speaking);
+window.addEventListener('hola:open-profile',()=>go('profile'));
 window.addEventListener('hola:authenticated',close);
 window.addEventListener('hola:progress-loaded',()=>{close();s=normalizeProgress({...fresh(),...loadProgress()});render();updateIdentity()});
 function updateIdentity(){const name=getSession()?.user.name||'학습자';$('.profile h1').textContent=name;$('.profile i').textContent=name.slice(0,1);$('.avatar').textContent=name.slice(0,1);$('#profile .privacy').textContent=getSession()?'학습·평가 기록은 로그인한 계정에 저장돼요.':'게스트 기록은 현재 기기에 저장돼요.';$('.welcome-title').textContent='¡Hola, '+name+'!';}
