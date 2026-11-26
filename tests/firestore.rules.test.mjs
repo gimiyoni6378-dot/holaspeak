@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, limit, getDocs } from 'firebase/firestore';
 import { normalizeProgress } from '../src/progression.js';
 test('Firestore rules isolate users and validate points, levels and revisions', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
   const environment = await initializeTestEnvironment({ projectId: 'demo-holaspeak', firestore: { rules: await readFile(new URL('../firestore.rules', import.meta.url), 'utf8') } });
@@ -22,4 +22,15 @@ test('Firestore rules isolate users and validate points, levels and revisions', 
   await assertFails(updateDoc(doc(alice, 'users/alice'), { 'progress.points': 999, revision: 1, updatedAt: serverTimestamp() }));
   await assertFails(updateDoc(doc(alice, 'users/alice'), { progress: normalizeProgress({ xp: 100 }), revision: 0, updatedAt: serverTimestamp() }));
   await assertSucceeds(updateDoc(doc(alice, 'users/alice'), { progress: normalizeProgress({ xp: 100 }), revision: 1, updatedAt: serverTimestamp() }));
+  const id = '00000000-0000-4000-8000-000000000001';
+  const item = { id, reference: 'Hola', created: Date.now(), result: { accuracy: 80, fluency: 90, completeness: 100, pronunciation: 85, words: [] }, savedAt: serverTimestamp() };
+  await assertSucceeds(setDoc(doc(alice, 'users/alice/assessments', id), item));
+  await assertSucceeds(getDocs(query(collection(alice, 'users/alice/assessments'), limit(50))));
+  await assertFails(getDocs(collection(alice, 'users/alice/assessments')));
+  await assertFails(getDoc(doc(bob, 'users/alice/assessments', id)));
+  await assertFails(getDocs(query(collection(bob, 'users/alice/assessments'), limit(50))));
+  await assertFails(setDoc(doc(alice, 'users/alice/assessments', id.replace(/1$/, '2')), { ...item, id: id.replace(/1$/, '2'), audio: 'raw recording' }));
+  await assertFails(setDoc(doc(bob, 'users/alice/assessments', id), item));
+  await assertFails(setDoc(doc(anon, 'users/alice/assessments', id), item));
+
 });

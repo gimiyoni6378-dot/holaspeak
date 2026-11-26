@@ -1,10 +1,14 @@
-# HolaSpeak: 구현 상태와 운영 연결
+# HolaSpeak 구현 상태
 
-## 2단계 준비: Firebase 인증을 쓰는 Google TTS
+## 현재 선택: Firebase Spark + Azure Speech
 
-`functions/`의 `tts` HTTPS 함수에 Firebase ID 토큰 검증, 문장·음성·속도·피치·인코딩별 캐시, Firestore 영구 캐시와 사용량 예약을 추가했다. 프런트엔드는 만료된 저장 토큰 대신 SDK에서 갱신한 ID 토큰을 사용한다. TTS 설정과 Azure 평가 표시를 분리했으며 `HOLA_ENABLE_TTS = true`, `HOLA_ENABLE_SPEECH = false`이다. 실제 함수 주소는 배포 성공 후에만 `HOLA_TTS_API_URL`에 설정한다.
+사용자가 확인한 Google/이메일 로그인·출석·계정 기록 복원은 유지한다. Google TTS 및 Blaze 경로는 사용하지 않는다. `azure-worker/`의 Cloudflare Workers Free + SQLite Durable Object 중계 서버로 Azure Speech F0의 예시 TTS와 기본 발음 평가를 연결한다. 실제 Azure 계정·리소스·키는 아직 없으며 Worker 배포도 하지 않았다.
 
-Google Neural2 무료 한도는 월 100만 자다. 앱 자체 생성 제한 기본값도 100만 자로 준비했지만, Google 계정의 전체 사용량이나 함수/저장 비용을 대신 제한하지 않는다. 결제 설정 변경이나 클라우드 함수 배포는 아직 하지 않았다. 실제 제공자 호출은 배포 후 검증한다. 상세 절차는 `functions/README.md`를 따른다.
+구현: Firebase ID 토큰 서버 검증, 문장·목소리·속도·음높이별 MP3 캐시, 모든 사용자 합산 월별 한도와 개인별 일일 한도, 녹음마다 신규 발음 평가와 UUID, Firestore 개인 평가 이력, 평가 재호출 없는 저장 재시도. 녹음과 평가 응답은 서버 캐시에 저장하지 않는다. 자세한 설정 및 제한은 `azure-worker/README.md`를 따른다.
+
+아래는 이전 설계 기록이며 Google TTS·SQLite 인증 서버·전체 초기화 설명은 현재 운영 경로가 아니다. 현재 학습 초기화는 진행도만 초기화하며 평가 이력을 삭제하지 않는다.
+
+## 이전 설계 기록
 
 ## 현재 선택: Firebase 회원가입·사용자 데이터 (2026-11-26)
 

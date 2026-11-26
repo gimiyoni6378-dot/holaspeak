@@ -60,4 +60,7 @@ test('speech requests use a current Firebase token and the dedicated TTS endpoin
   assert.equal(request.url, 'https://voice.test/tts/synthesize');
   assert.equal(request.init.headers.Authorization, 'Bearer renewed-token');
   assert.equal(request.init.cache, 'no-store');
+  window.HOLA_TTS_PROVIDER = 'device'; request = null;
+  await assert.rejects(client.api('/synthesize', { method: 'POST', body: { text: 'Hola' } }), /기기 음성 모드/);
+  assert.equal(request, null);
 });

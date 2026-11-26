@@ -8,3 +8,6 @@ dist/
 .firebase/
 *-debug.log
 .openai/
+.wrangler/
+.dry-run/
+.dev.vars*

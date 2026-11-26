@@ -5,8 +5,9 @@ import { Stack, Text, Button, Selector, TextInput, ProgressBar } from '@astryxde
 import { Heading } from '@astryxdesign/core/Heading';
 import { HolaTheme } from '../astryx-ui.js';
 import { api, getSession, getStatus, loadProgress, subscribe, mountGoogleButton, logout, sync, resolveConflict, loginGoogle, loginEmail, signupEmail, verifyEmail, forgotPassword, checkIn } from './hola-client.js';
+import { saveAssessment } from './firebase-backend.js';
 import { progression, activitySummary } from './progression.js';
-import { say, stopAudio, recordAttempt, audioBase64, voiceSettings, setVoiceSettings } from './hola-audio.js';
+import { say, stopAudio, recordAttempt, audioBase64, voiceSettings, setVoiceSettings, azureVoices } from './hola-audio.js';
 const h = htm.bind(React.createElement);
 function useAccount() { const [, update] = React.useReducer(x => x + 1, 0); React.useEffect(() => subscribe(update), []); return { session: getSession(), ...getStatus() }; }
 function GoogleLogin() {
@@ -40,6 +41,7 @@ export function AccountPanel() {
   const state = useAccount(), [history, setHistory] = React.useState([]), [error, setError] = React.useState('');
   const attendance = activitySummary(loadProgress().attendanceDates), study = activitySummary(loadProgress().studyDates);
   const [voice, setVoice] = React.useState(voiceSettings), [audioStatus, setAudioStatus] = React.useState('');
+
   const refresh = async () => { const owner = getSession(); setError(''); try { const data = await api('/assessments'); if (getSession() === owner) setHistory(data.items); } catch (e) { if (getSession() === owner) setError(e.message); } };
   React.useEffect(() => { setHistory([]); if (state.session && speechEnabled) void refresh(); }, [state.session]);
   React.useEffect(() => { const fn = e => setAudioStatus(e.detail); window.addEventListener('hola:audio-status', fn); return () => window.removeEventListener('hola:audio-status', fn); }, []);
@@ -65,12 +67,12 @@ export function AccountPanel() {
     <${Text} role="status" aria-live="polite">${state.syncError || (state.busy ? '기록을 연결하고 있어요…' : state.session ? '학습 기록은 계정에 저장돼요. 오프라인 변경은 연결되면 동기화해요.' : '게스트 기록은 현재 기기에 저장돼요.')}</${Text}>
     ${state.conflict ? h`<${Button} label="다른 기기의 기록 불러오기" onClick=${action(() => resolveConflict(false))} /><${Button} label="이 기기의 기록으로 저장하기" onClick=${action(() => resolveConflict(true))} />` : null}
     ${ttsEnabled ? h`    <${Heading} level=${2}>예시 음성 설정</${Heading}>
-    <${Selector} label="Google 스페인어 음성" value=${voice.voice} onChange=${change('voice')} options=${['es-ES-Neural2-A', 'es-ES-Neural2-E', 'es-ES-Neural2-H']} presentation="adaptive" />
+    <${Selector} label="스페인어 목소리" value=${voice.voice} onChange=${change('voice')} options=${azureVoices} presentation="adaptive" />
     <${Selector} label="말하기 속도" value=${String(voice.speakingRate)} onChange=${change('speakingRate')} options=${[{ value: '0.7', label: '천천히' }, { value: '0.9', label: '학습 속도' }, { value: '1.1', label: '자연스럽게' }]} presentation="adaptive" />
     <${Selector} label="음높이" value=${String(voice.pitch)} onChange=${change('pitch')} options=${[{ value: '-2', label: '낮게' }, { value: '0', label: '기본' }, { value: '2', label: '높게' }]} presentation="adaptive" />
     <${Button} label="Hola 예시 듣기" onClick=${() => { void say('Hola'); }} />
     <${Text} role="status" aria-live="polite">${audioStatus}</${Text}>
-    <${Text}>${window.HOLA_TTS_API_URL ? 'Google 음성은 첫 생성 후 저장해 반복 재생해요.' : 'Google 음성 연결을 준비 중이에요. 지금은 기기 음성으로 들을 수 있어요.'}</${Text}>
+    <${Text}>${window.HOLA_TTS_API_URL ? 'Azure 예시 음성은 같은 문장·목소리·속도·음높이로 다시 들으면 저장된 음성을 사용해요.' : 'Azure 연결을 준비 중이에요. 현재는 기기의 스페인어 음성으로 읽어줘요.'}</${Text}>
     ` : null}
     ${speechEnabled ? h`<${Heading} level=${2}>최근 발음 평가</${Heading}>
     <${Text}>녹음마다 새로 평가해요. 녹음은 보관하지 않고 문장과 평가 기록을 계정에 저장해요.</${Text}>
@@ -80,12 +82,19 @@ export function AccountPanel() {
   </${Stack}></${HolaTheme}>`;
 }
 function Speaking({ onComplete }) {
-  const [phase, setPhase] = React.useState('idle'), [error, setError] = React.useState(''), [result, setResult] = React.useState(null);
+  const [phase, setPhase] = React.useState('idle'), [error, setError] = React.useState(''), [result, setResult] = React.useState(null), [unsaved, setUnsaved] = React.useState(null), [saving, setSaving] = React.useState(false);
   const stop = React.useRef(), controller = React.useRef(), owner = React.useRef(getSession());
   React.useEffect(() => () => { controller.current?.abort(); stopAudio(); }, []);
-  if (window.HOLA_ENABLE_SPEECH !== true) return h`<${HolaTheme}><${Stack} gap=${3}><${Heading} level=${2}>말하기 연습</${Heading}><${Text}>말하기 평가는 다음 단계에서 연결할 예정이에요. 먼저 회원가입과 학습 기록 저장을 이용해 주세요.</${Text}></${Stack}></${HolaTheme}>`;
+  if (window.HOLA_ENABLE_SPEECH !== true || !window.HOLA_API_URL) return h`<${HolaTheme}><${Stack} gap=${3}><${Heading} level=${2}>말하기 연습</${Heading}><${Text}>Azure 말하기 평가를 준비 중이에요. 연결이 완료되면 녹음과 점수 확인을 이용할 수 있어요.</${Text}></${Stack}></${HolaTheme}>`;
+  const persist = async item => {
+    setSaving(true);
+    try { await saveAssessment(item, owner.current?.user.id); if (getSession() === owner.current) { setUnsaved(null); setError(''); window.dispatchEvent(new Event('hola:assessment-saved')); } }
+    catch { if (getSession() === owner.current) { setUnsaved(item); setError('점수는 나왔지만 기록을 저장하지 못했어요. 다시 저장을 눌러 주세요.'); } }
+    finally { setSaving(false); }
+  };
   const start = async () => {
     if (phase === 'recording') { setPhase('assessing'); stop.current?.(); return; }
+    if (saving || unsaved || phase !== 'idle' || !owner.current) return;
     setError(''); setResult(null); setPhase('permission');
     const active = new AbortController(); controller.current = active;
     try {
@@ -94,16 +103,16 @@ function Speaking({ onComplete }) {
       setPhase('assessing');
       const item = await api('/assessments', { method: 'POST', body: { reference: 'Hola', audio: audioBase64(bytes) }, signal: AbortSignal.any([active.signal, AbortSignal.timeout(35000)]) });
       if (active.signal.aborted || getSession() !== owner.current) return;
-      setResult(item.result); setPhase('idle'); onComplete();
-      window.dispatchEvent(new Event('hola:assessment-saved'));
+      setResult(item.result); onComplete(); await persist(item); setPhase('idle');
     } catch (e) { if (!active.signal.aborted) { setError(e.name === 'NotAllowedError' ? '마이크 권한을 허용한 뒤 다시 녹음해 주세요.' : e.message); setPhase('idle'); } }
   };
   return h`<${HolaTheme}><${Stack} gap=${3}>
     <${Heading} level=${2}>한 단어 말하기</${Heading}><${Text} weight="semibold">Hola · 올라 · 안녕</${Text}>
     <${Button} label="예시 음성 듣기" isDisabled=${phase !== 'idle'} onClick=${() => { void say('Hola'); }} />
     <${Text}>마이크로 25초 이내로 말해 주세요. 녹음은 Azure로 전송해 매번 새로 평가하고 저장하지 않아요.</${Text}>
-    <${Button} label=${phase === 'recording' ? '녹음 끝내고 평가하기' : '녹음 시작'} isDisabled=${phase === 'permission' || phase === 'assessing'} onClick=${start} />
+    <${Button} label=${phase === 'recording' ? '녹음 끝내고 평가하기' : '녹음 시작'} isDisabled=${!owner.current || saving || Boolean(unsaved) || phase === 'permission' || phase === 'assessing'} onClick=${start} />
     <${Text} role="status" aria-live="polite">${phase === 'permission' ? '마이크 권한을 확인하고 있어요…' : phase === 'recording' ? '녹음 중이에요. 말한 뒤 녹음을 끝내 주세요.' : phase === 'assessing' ? '발음을 평가하고 있어요…' : error}</${Text}>
+    ${unsaved ? h`<${Button} label="평가 기록 다시 저장" isLoading=${saving} onClick=${() => persist(unsaved)} /><${Text}>다시 저장하면 Azure 평가를 추가 요청하지 않아요. 창을 닫으면 저장하지 못한 기록은 사라져요.</${Text}>` : null}
     ${result ? h`<${Heading} level=${3}>발음 ${Math.round(result.pronunciation)}점</${Heading}><${Text}>정확도 ${result.accuracy ?? '—'} · 유창성 ${result.fluency ?? '—'} · 완성도 ${result.completeness ?? '—'}</${Text}><${Stack} as="ul" gap=${1}>${result.words.map((w, i) => h`<${Stack} as="li" key=${i}><${Text}>${w.word} · ${w.accuracy ?? '—'}점 · ${w.error}</${Text}></${Stack}>`)}</${Stack}><${Text}>다시 녹음하면 새 평가 기록이 추가돼요.</${Text}>` : null}
   </${Stack}></${HolaTheme}>`;
 }

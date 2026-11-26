@@ -1,4 +1,6 @@
-# Google TTS function (stage 2)
+# Google TTS function (unused draft)
+
+Current plan uses Firebase Spark + Azure Speech through Cloudflare Workers Free; see ../azure-worker/README.md. This draft was not deployed; its deployment target was removed from firebase.json. The following notes are retained for reference and are not the current setup instructions.
 
 Firebase HTTPS function `tts` validates **Firebase ID tokens** and generates Spanish Neural2 MP3 examples. The legacy `tts-service/` is not the deployment target for this stage.
 

@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "holaspeak-speech",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-26",
+  "workers_dev": true,
+  "observability": { "enabled": false },
+  "vars": {
+    "FIREBASE_PROJECT_ID": "holaspeak-ac16d",
+    "ALLOWED_ORIGIN": "https://gimiyoni6378-dot.github.io",
+    "AZURE_SPEECH_REGION": "",
+    "SPEECH_ENABLED": "false"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "SPEECH", "class_name": "SpeechStore" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SpeechStore"] }]
+}

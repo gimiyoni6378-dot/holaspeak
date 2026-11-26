@@ -26,6 +26,21 @@ service cloud.firestore {
         && d.revision is int && d.revision >= 0 && d.createdAt is timestamp && d.updatedAt == request.time;
     }
     match /users/{uid} {
+      match /assessments/{id} {
+        allow get: if owns(uid);
+        allow list: if owns(uid) && request.query.limit <= 50;
+        allow create: if owns(uid)
+          && request.resource.data.keys().hasOnly(['id','reference','created','result','savedAt'])
+          && request.resource.data.id == id && id.size() == 36
+          && request.resource.data.reference is string && request.resource.data.reference.size() > 0 && request.resource.data.reference.size() <= 240
+          && request.resource.data.created is int && request.resource.data.created > 0
+          && request.resource.data.savedAt == request.time
+          && request.resource.data.result.keys().hasOnly(['accuracy','fluency','completeness','pronunciation','words'])
+          && request.resource.data.result.pronunciation is number
+          && request.resource.data.result.pronunciation >= 0 && request.resource.data.result.pronunciation <= 100
+          && request.resource.data.result.words is list && request.resource.data.result.words.size() <= 100;
+        allow update, delete: if false;
+      }
       allow get: if owns(uid);
       allow list, delete: if false;
       allow create: if owns(uid) && validUser(request.resource.data, uid)

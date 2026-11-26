@@ -1,10 +1,47 @@
 import { api } from './hola-client.js';
-export const defaultVoice = { voice: 'es-ES-Neural2-A', speakingRate: 0.9, pitch: 0, languageCode: 'es-ES', audioEncoding: 'MP3', version: 1 };
-export function voiceSettings() { try { return { ...defaultVoice, ...JSON.parse(localStorage.getItem('hola-voice') || '{}') }; } catch { return { ...defaultVoice }; } }
-export function setVoiceSettings(value) { localStorage.setItem('hola-voice', JSON.stringify(value)); }
-export function clipSettings(text, value = voiceSettings()) { return { text: text.trim().normalize('NFC'), voice: value.voice, speakingRate: value.speakingRate, pitch: value.pitch, languageCode: 'es-ES', audioEncoding: 'MP3', version: 1 }; }
+export const azureVoices = [{ value: 'es-ES-ElviraNeural', label: 'Elvira · 스페인 여성 음성' }, { value: 'es-ES-AlvaroNeural', label: 'Álvaro · 스페인 남성 음성' }];
+export const defaultVoice = { voice: 'es-ES-ElviraNeural', voiceURI: 'auto', speakingRate: 0.9, pitch: 0, languageCode: 'es-ES' };
+function normalizeVoice(input = {}) {
+  return { voice: azureVoices.some(v => v.value === input.voice) ? input.voice : 'es-ES-ElviraNeural', voiceURI: typeof input.voiceURI === 'string' ? input.voiceURI : 'auto', speakingRate: Number.isFinite(input.speakingRate) && input.speakingRate >= 0.5 && input.speakingRate <= 1.5 ? input.speakingRate : 0.9, pitch: Number.isFinite(input.pitch) && input.pitch >= -5 && input.pitch <= 5 ? input.pitch : 0, languageCode: 'es-ES' };
+}
+export function voiceSettings() { try { return normalizeVoice(JSON.parse(localStorage.getItem('hola-voice') || '{}') || {}); } catch { return { ...defaultVoice }; } }
+export function setVoiceSettings(value) { localStorage.setItem('hola-voice', JSON.stringify(normalizeVoice(value))); }
+export function spanishVoices() {
+  try { return (window.speechSynthesis?.getVoices?.() || []).filter(voice => /^es(?:[-_]|$)/i.test(voice.lang)); } catch { return []; }
+}
+let playGeneration = 0, currentUtterance;
+const status = message => window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: message }));
+export function stopAudio() { playGeneration++; try { source?.stop(); } catch {} window.speechSynthesis?.cancel(); currentUtterance = null; }
+async function deviceSay(text) {
+  stopAudio();
+  const generation = playGeneration, settings = voiceSettings();
+  const synth = window.speechSynthesis;
+  if (!synth || typeof SpeechSynthesisUtterance === 'undefined') { status('이 브라우저는 음성 읽기를 지원하지 않아요. Chrome 또는 Safari에서 열어 주세요.'); return; }
+  const sentence = typeof text === 'string' ? text.trim().normalize('NFC') : '';
+  if (!sentence) return;
+  const voices = spanishVoices();
+  const selected = voices.find(voice => voice.voiceURI === settings.voiceURI)
+    || voices.find(voice => /^es[-_]ES$/i.test(voice.lang) && voice.localService)
+    || voices.find(voice => /^es[-_]ES$/i.test(voice.lang))
+    || voices.find(voice => voice.localService) || voices[0];
+  const utterance = new SpeechSynthesisUtterance(sentence);
+  utterance.lang = selected?.lang || settings.languageCode;
+  if (selected) utterance.voice = selected;
+  utterance.rate = settings.speakingRate; utterance.pitch = 2 ** (settings.pitch / 12);
+  utterance.onstart = () => { if (generation === playGeneration) status(selected ? `${selected.name} · 스페인어 발음을 재생 중이에요.` : '기기의 스페인어 음성으로 재생 중이에요.'); };
+  utterance.onend = () => { if (generation === playGeneration) { currentUtterance = null; status('발음 재생을 마쳤어요.'); } };
+  utterance.onerror = event => { if (generation === playGeneration && !['canceled', 'interrupted'].includes(event.error)) { currentUtterance = null; status('스페인어 음성을 재생하지 못했어요. 기기 설정에서 스페인어 음성을 추가하거나 다른 브라우저에서 열어 주세요.'); } };
+  currentUtterance = utterance;
+  try {
+    synth.resume?.();
+    synth.speak(utterance); // Stay in the tap/click gesture, including on mobile.
+    status('기기의 스페인어 발음을 준비하고 있어요.');
+  } catch { currentUtterance = null; status('음성을 재생하지 못했어요. 다시 눌러 주세요.'); }
+}
+
+export function clipSettings(text, value = voiceSettings()) { return { text: text.trim().normalize('NFC'), voice: value.voice, speakingRate: value.speakingRate, pitch: value.pitch, languageCode: 'es-ES', audioEncoding: 'MP3', provider: 'azure', version: 1 }; }
 const memory = new Map(), pending = new Map();
-let context, source, playGeneration = 0;
+let context, source;
 async function database() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('hola-audio-cache', 1);
@@ -25,14 +62,8 @@ async function clipCache(key, blob, remove = false) {
     tx.oncomplete = () => resolve(result); tx.onerror = tx.onabort = () => reject(tx.error);
   }); } finally { db.close(); }
 }
-function deviceVoice(text, settings) {
-  if (!window.speechSynthesis) throw new Error('이 브라우저는 음성 재생을 지원하지 않아요.');
-  const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'es-ES'; utterance.rate = settings.speakingRate;
-  utterance.pitch = 2 ** (settings.pitch / 12); speechSynthesis.cancel(); speechSynthesis.speak(utterance);
-  window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: '기기 음성으로 재생 중이에요. Google 예시 음성은 로그인과 서버 연결이 필요해요.' }));
-}
-export function stopAudio() { playGeneration++; try { source?.stop(); } catch {} window.speechSynthesis?.cancel(); }
 export async function say(text) {
+  if (window.HOLA_TTS_PROVIDER === 'device' || !window.HOLA_TTS_API_URL) return deviceSay(text);
   stopAudio(); const generation = playGeneration, settings = clipSettings(text), key = JSON.stringify(settings);
   try {
     const Audio = window.AudioContext || window.webkitAudioContext;
@@ -49,7 +80,7 @@ export async function say(text) {
           }
           if (!buffer) {
             blob = await api('/synthesize', { method: 'POST', body: settings, binary: true });
-            if (!blob.type.includes('audio') || !blob.size || blob.size > 650000) throw new Error('Invalid audio');
+            if (!blob.type.includes('audio') || !blob.size || blob.size > 650000) throw new Error('예시 음성 데이터를 읽지 못했어요. 다시 눌러 주세요.');
             buffer = await context.decodeAudioData(await blob.arrayBuffer());
             try { await clipCache(key, blob); } catch {}
           }
@@ -62,13 +93,8 @@ export async function say(text) {
     }
     if (generation !== playGeneration) return;
     source = context.createBufferSource(); source.buffer = memory.get(key); source.connect(context.destination); source.start();
-    window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: 'Google 예시 음성을 재생했어요. 같은 설정으로 다시 들으면 저장된 음성을 사용해요.' }));
-  } catch {
-    if (generation === playGeneration) {
-      try { deviceVoice(text, settings); }
-      catch (error) { window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: error.message })); }
-    }
-  }
+    window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: 'Azure 예시 음성을 재생했어요. 같은 설정으로 다시 들으면 저장된 음성을 사용해요.' }));
+  } catch (error) { if (generation === playGeneration) status(error.message || '예시 음성을 재생하지 못했어요.'); }
 }
 
 export function pcmWav(samples, sourceRate) {

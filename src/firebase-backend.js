@@ -57,7 +57,7 @@ export const restoreFirebase = guest => account(guest);
 export async function firebaseIdToken(uid) {
   const f = await sdk(); await f.auth.authStateReady();
   const user = f.auth.currentUser;
-  if (!user || user.uid !== uid) throw Object.assign(new Error('로그인한 뒤 Google 음성을 이용해 주세요.'), { status: 401 });
+  if (!user || user.uid !== uid) throw Object.assign(new Error('로그인한 뒤 음성 서비스를 이용해 주세요.'), { status: 401 });
   return user.getIdToken(); // Firebase refreshes an expired token before use.
 }
 export async function signInGoogle(guest) {
@@ -96,6 +96,11 @@ export async function firebaseRequest(path, options = {}, owner) {
   try {
     if (path === '/auth/logout') { await f.signOut(f.auth); return null; }
     if (path === '/me') return account();
+    if (path === '/assessments' && (!options.method || options.method === 'GET')) {
+      const query = f.query(f.collection(f.db, 'users', user.uid, 'assessments'), f.orderBy('created', 'desc'), f.limit(50));
+      const snapshot = await f.getDocs(query);
+      return { items: snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) };
+    }
     if (path === '/progress') {
       const ref = f.doc(f.db, 'users', user.uid);
       const result = await f.runTransaction(f.db, async tx => {
@@ -112,4 +117,15 @@ export async function firebaseRequest(path, options = {}, owner) {
     }
     throw new Error('음성 서비스는 다음 단계에서 연결할 예정이에요.');
   } catch (error) { throw authError(error); }
+}
+
+// Retrying a save reuses the same document ID; it never calls Azure again.
+export async function saveAssessment(item, uid) {
+  const f = await sdk(); await f.auth.authStateReady();
+  if (!uid || f.auth.currentUser?.uid !== uid) throw new Error('같은 계정으로 로그인한 뒤 기록을 저장해 주세요.');
+  const ref = f.doc(f.db, 'users', uid, 'assessments', item.id);
+  await f.runTransaction(f.db, async tx => {
+    if ((await tx.get(ref)).exists()) return;
+    tx.set(ref, { id: item.id, reference: item.reference, created: item.created, result: item.result, savedAt: f.serverTimestamp() });
+  });
 }

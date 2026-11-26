@@ -21,6 +21,9 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npm test
+      - run: npm ci --prefix azure-worker
+      - run: npm test --prefix azure-worker
+      - run: npm run check --prefix azure-worker
       - run: npm ci --prefix functions
       - run: npm test --prefix functions
       - run: npm run test:rules

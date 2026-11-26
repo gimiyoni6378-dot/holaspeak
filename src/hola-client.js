@@ -16,9 +16,10 @@ export function storageKey() { return session ? `hola-user:${session.user.id}` :
 export function loadProgress() { return read(storageKey(), {}).progress || read(storageKey(), {}); }
 function persistSession() { try { session ? sessionStorage.setItem('hola-session', JSON.stringify(session)) : sessionStorage.removeItem('hola-session'); } catch {} }
 export async function api(path, { method = 'GET', body, token = session?.token, binary = false, signal } = {}) {
-  if (isFirebase() && !['/synthesize', '/assessments'].includes(path)) return firebaseRequest(path, { method, body }, session);
+  if (path === '/synthesize' && window.HOLA_TTS_PROVIDER === 'device') throw new Error('기기 음성 모드에서는 외부 TTS 서버를 호출하지 않아요.');
+  if (isFirebase() && (path !== '/synthesize' && (path !== '/assessments' || method === 'GET'))) return firebaseRequest(path, { method, body }, session);
   const endpoint = path === '/synthesize' ? (window.HOLA_TTS_API_URL || apiUrl()).replace(/\/$/, '') : apiUrl();
-  if (!endpoint) throw new Error('Google 음성 서버를 준비 중이에요.');
+  if (!endpoint) throw new Error('Azure 음성 서버를 준비 중이에요.');
   if (isFirebase()) token = await firebaseIdToken(session?.user.id);
   const response = await fetch(endpoint + path, { method, cache: 'no-store', signal: signal || AbortSignal.timeout(35000), headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
   if (!response.ok) {

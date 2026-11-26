@@ -9,7 +9,7 @@ async function audioModule() {
 }
 function environment() {
   const clips = new Map(), preferences = new Map(); let plays = 0, devicePlays = 0;
-  globalThis.window = new EventTarget();
+  globalThis.window = new EventTarget(); window.HOLA_TTS_PROVIDER = 'azure'; window.HOLA_TTS_API_URL = 'https://speech.test';
   globalThis.localStorage = { getItem: key => preferences.get(key) ?? null, setItem: (key, value) => preferences.set(key, value) };
   window.AudioContext = class {
     resume = async () => {};
@@ -53,7 +53,7 @@ test('invalid audio never poisons persistent cache and a later valid response re
   const env = environment(); let calls = 0;
   globalThis.__audioTestApi = async () => new Blob([++calls === 1 ? 'bad-mp3' : 'valid-mp3'], { type: 'audio/mpeg' });
   const audio = await audioModule(); await audio.say('Gracias');
-  assert.equal(env.clips.size, 0); assert.equal(env.devicePlays(), 1);
+  assert.equal(env.clips.size, 0); assert.equal(env.devicePlays(), 0);
   await audio.say('Gracias');
   assert.equal(calls, 2); assert.equal(env.clips.size, 1); assert.equal(env.plays(), 1);
 });
