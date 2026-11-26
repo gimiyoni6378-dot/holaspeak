@@ -6,9 +6,11 @@ import { settings, ssml, wav, LIMITS, quotaKeys } from '../src/domain.js';
 import { verifyUser } from '../src/auth.js';
 function environment() {
   const db = new DatabaseSync(':memory:');
-  const sql = { exec(query, ...params) { const statement = db.prepare(query); return { toArray: () => statement.all(...params) }; } };
-  // Cloudflare exec executes immediately, including writes.
-  sql.exec = (query, ...params) => { const statement = db.prepare(query); const rows = statement.all(...params); return { toArray: () => rows }; };
+  // Cloudflare accepts ArrayBuffer BLOB bindings; Node 22 SQLite needs a view.
+  const sql = { exec(query, ...params) {
+    const rows = db.prepare(query).all(...params.map(p => p instanceof ArrayBuffer ? new Uint8Array(p) : p));
+    return { toArray: () => rows };
+  } };
   const ctx = { storage: { sql, transactionSync(fn) { db.exec('BEGIN'); try { const result = fn(); db.exec('COMMIT'); return result; } catch (e) { db.exec('ROLLBACK'); throw e; } } } };
   const env = { AZURE_SPEECH_KEY: 'test-server-key', AZURE_SPEECH_REGION: 'eastus', SPEECH_ENABLED: 'true', ALLOWED_ORIGIN: 'https://app.test' };
   return { store: new SpeechStore(ctx, env), db, env };
