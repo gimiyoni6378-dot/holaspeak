@@ -24,6 +24,12 @@ Vercel 프로젝트 → Settings → Environment Variables, **Production**에 �
 | `SPEECH_ENABLED` | 실제 설정 전 `false`, 키 설정·검증 시 `true` |
 | `AZURE_SPEECH_KEY` | Azure Speech F0 리소스의 키 1 또는 키 2. Sensitive로 저장 |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | 서버용 서비스 계정 JSON 전체. Sensitive로 저장 |
+| `TTS_MONTHLY_CHAR_LIMIT` | 전체 사용자 합산 UTC 월 신규 생성 상한. 기본 `500000`, 낮추기만 가능 |
+| `ASSESSMENT_MONTHLY_SECONDS_LIMIT` | 전체 사용자 합산 UTC 월 평가 초 상한. 기본 `18000`, 낮추기만 가능 |
+| `TTS_DAILY_CHAR_LIMIT` | 사용자별 UTC 하루 신규 생성 상한. 기본 `5000`, 낮추기만 가능 |
+| `ASSESSMENT_DAILY_SECONDS_LIMIT` | 사용자별 UTC 하루 평가 초 상한. 기본 `300`, 낮추기만 가능 |
+
+제한값을 `0`으로 설정하면 해당 신규 호출을 막는다. 무료 상한을 넘기거나 잘못 입력하면 서버는 503으로 차단한다. 전체 중단 스위치는 `SPEECH_ENABLED=false`다. 저장된 예시 캐시는 신규 생성량에 포함하지 않는다.
 
 키와 JSON은 채팅·GitHub·프런트엔드 파일에 넣지 않는다. JSON이 필요하면 Firebase 콘솔의 프로젝트 설정 → 서비스 계정에서 발급해 Vercel에 직접 입력한다. 서버 인증서는 UID 인증·Firestore 접근용이다. 향후 운영 시 Google Workload Identity Federation을 구성하면 장기 키 없이 연결할 수 있다.
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FirestoreSpeechStore } from '../server/speech-store.js';
+import { FirestoreSpeechStore, configuredQuotas } from '../server/speech-store.js';
 import { createHandler } from '../server/speech-handler.js';
 import { readFile } from 'node:fs/promises';
 const audioSource = (await readFile(new URL('../src/hola-audio.js', import.meta.url), 'utf8')).replace("import { api } from './hola-client.js';", 'const api = () => {};');
@@ -20,6 +20,12 @@ function database() {
 }
 const env = { AZURE_SPEECH_REGION: 'eastus', AZURE_SPEECH_KEY: 'server-secret', SPEECH_ENABLED: 'true', ALLOWED_ORIGIN: 'https://app.test' };
 const wav = () => Buffer.from(pcmWav(new Float32Array(16000), 16000)).toString('base64');
+test('usage options allow lower caps and zero, reject increases above free allowances', () => {
+  assert.equal(configuredQuotas('alice', 'tts', { TTS_MONTHLY_CHAR_LIMIT: '100000' }, Date.now())[0].limit, 100000);
+  assert.equal(configuredQuotas('alice', 'assessment', { ASSESSMENT_MONTHLY_SECONDS_LIMIT: '0' }, Date.now())[0].limit, 0);
+  for (const value of ['500001', '-1', '', 'bad']) assert.throws(() => configuredQuotas('alice', 'tts', { TTS_MONTHLY_CHAR_LIMIT: value }, Date.now()), e => e.status === 503);
+  assert.throws(() => configuredQuotas('alice', 'assessment', { ASSESSMENT_MONTHLY_SECONDS_LIMIT: '18001' }, Date.now()), e => e.status === 503);
+});
 test('Firestore cache survives instances and shares a durable lease across concurrent requests', async () => {
   const db = database(); let calls = 0, release;
   const upstream = async () => { calls++; await new Promise(resolve => { release = resolve; }); return new Response('valid-mp3', { headers: { 'Content-Type': 'audio/mpeg' } }); };

@@ -1,9 +1,18 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { settings, ssml, wav, assessment, quotaKeys, fail } from '../azure-worker/src/domain.js';
 const digest = value => createHash('sha256').update(value).digest('hex');
+export function configuredQuotas(uid, kind, env, now) {
+  const names = kind === 'tts' ? ['TTS_MONTHLY_CHAR_LIMIT', 'TTS_DAILY_CHAR_LIMIT'] : ['ASSESSMENT_MONTHLY_SECONDS_LIMIT', 'ASSESSMENT_DAILY_SECONDS_LIMIT'];
+  return quotaKeys(uid, kind, new Date(now)).map((q, i) => {
+    const value = env[names[i]];
+    const amount = value === undefined ? q.limit : /^\d+$/.test(value) ? Number(value) : NaN;
+    if (!Number.isSafeInteger(amount) || amount < 0 || amount > q.limit) throw fail(503, '무료 범위 안의 음성 사용량 제한을 설정해 주세요.');
+    return { ...q, limit: amount };
+  });
+}
 export class FirestoreSpeechStore {
   constructor(db, env, upstream = fetch) { this.db = db; this.env = env; this.upstream = upstream; }
-  quotas(uid, kind, now) { return quotaKeys(uid, kind, new Date(now)).map(q => ({ ...q, ref: this.db.doc(`_speechUsage/${digest(q.key)}`) })); }
+  quotas(uid, kind, now) { return configuredQuotas(uid, kind, this.env, now).map(q => ({ ...q, ref: this.db.doc(`_speechUsage/${digest(q.key)}`) })); }
   async reserveTransaction(tx, uid, kind, amount, now) {
     const quotas = this.quotas(uid, kind, now), snapshots = await tx.getAll(...quotas.map(q => q.ref));
     const next = snapshots.map((snap, i) => {
