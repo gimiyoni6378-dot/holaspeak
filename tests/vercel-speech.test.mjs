@@ -35,6 +35,8 @@ test('Firestore cache survives instances and shares a durable lease across concu
   await assert.rejects(second.synthesize('bob', { text: 'Hola' }), e => e.status === 409);
   assert.equal(calls, 1); release(); await pending;
   const replay = await second.synthesize('bob', { text: 'Hola' }); assert.equal(Buffer.from(replay).toString(), 'valid-mp3'); assert.equal(calls, 1);
+  const variant = await second.synthesize('bob', { text: 'Hola', voice: 'es-ES-AlvaroNeural', speakingRate: 1.1, pitch: 2 });
+  assert.equal(Buffer.from(variant).toString(), 'valid-mp3'); assert.equal(calls, 1);
   assert.equal([...db.records.keys()].filter(k => k.startsWith('_speechAudio/')).length, 1);
 });
 test('concurrent quota reservations cannot cross caps and DB failure prevents Azure requests', async () => {

@@ -1,11 +1,7 @@
 import { api } from './hola-client.js';
-export const azureVoices = [{ value: 'es-ES-ElviraNeural', label: 'Elvira · 스페인 여성 음성' }, { value: 'es-ES-AlvaroNeural', label: 'Álvaro · 스페인 남성 음성' }];
-export const defaultVoice = { voice: 'es-ES-ElviraNeural', voiceURI: 'auto', speakingRate: 0.9, pitch: 0, languageCode: 'es-ES' };
-function normalizeVoice(input = {}) {
-  return { voice: azureVoices.some(v => v.value === input.voice) ? input.voice : 'es-ES-ElviraNeural', voiceURI: typeof input.voiceURI === 'string' ? input.voiceURI : 'auto', speakingRate: Number.isFinite(input.speakingRate) && input.speakingRate >= 0.5 && input.speakingRate <= 1.5 ? input.speakingRate : 0.9, pitch: Number.isFinite(input.pitch) && input.pitch >= -5 && input.pitch <= 5 ? input.pitch : 0, languageCode: 'es-ES' };
-}
-export function voiceSettings() { try { return normalizeVoice(JSON.parse(localStorage.getItem('hola-voice') || '{}') || {}); } catch { return { ...defaultVoice }; } }
-export function setVoiceSettings(value) { localStorage.setItem('hola-voice', JSON.stringify(normalizeVoice(value))); }
+// One shared example voice: old per-device preferences must not create variants.
+export const defaultVoice = Object.freeze({ voice: 'es-ES-ElviraNeural', voiceURI: 'auto', speakingRate: 0.9, pitch: 0, languageCode: 'es-ES' });
+export function voiceSettings() { return { ...defaultVoice }; }
 export function spanishVoices() {
   try { return (window.speechSynthesis?.getVoices?.() || []).filter(voice => /^es(?:[-_]|$)/i.test(voice.lang)); } catch { return []; }
 }
@@ -39,7 +35,7 @@ async function deviceSay(text) {
   } catch { currentUtterance = null; status('음성을 재생하지 못했어요. 다시 눌러 주세요.'); }
 }
 
-export function clipSettings(text, value = voiceSettings()) { return { text: text.trim().normalize('NFC'), voice: value.voice, speakingRate: value.speakingRate, pitch: value.pitch, languageCode: 'es-ES', audioEncoding: 'MP3', provider: 'azure', version: 1 }; }
+export function clipSettings(text) { const value = defaultVoice; return { text: text.trim().normalize('NFC'), voice: value.voice, speakingRate: value.speakingRate, pitch: value.pitch, languageCode: 'es-ES', audioEncoding: 'MP3', provider: 'azure', version: 1 }; }
 const memory = new Map(), pending = new Map();
 let context, source;
 async function database() {

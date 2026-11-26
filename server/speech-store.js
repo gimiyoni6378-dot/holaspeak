@@ -33,7 +33,7 @@ export class FirestoreSpeechStore {
     return response;
   }
   async synthesize(uid, input) {
-    const s = settings(input), key = digest(JSON.stringify(s)), markup = ssml(s), owner = randomUUID(), now = Date.now();
+    const s = settings({ text: input.text }), key = digest(JSON.stringify(s)), markup = ssml(s), owner = randomUUID(), now = Date.now();
     // Fixed number of slots bounds audio storage to 500 * 650 KB (< 1 GB).
     // Hash collisions evict old examples; they never return another example.
     const ref = this.db.doc(`_speechAudio/${parseInt(key.slice(0, 8), 16) % 500}`);

@@ -38,7 +38,7 @@ function environment() {
   } };
   return { clips, plays: () => plays, devicePlays: () => devicePlays };
 }
-test('example audio survives reload and changed voice settings get a distinct cached clip', async () => {
+test('example audio survives reload and legacy voice preferences reuse the shared clip', async () => {
   const env = environment(); let calls = 0;
   globalThis.__audioTestApi = async () => { calls++; return new Blob(['valid-mp3'], { type: 'audio/mpeg' }); };
   const first = await audioModule();
@@ -46,8 +46,9 @@ test('example audio survives reload and changed voice settings get a distinct ca
   assert.equal(calls, 1); assert.equal(env.clips.size, 1);
   const afterReload = await audioModule(); await afterReload.say('Hola');
   assert.equal(calls, 1);
-  afterReload.setVoiceSettings({ ...afterReload.defaultVoice, pitch: 2 }); await afterReload.say('Hola');
-  assert.equal(calls, 2); assert.equal(env.clips.size, 2); assert.equal(env.devicePlays(), 0);
+  localStorage.setItem('hola-voice', JSON.stringify({ voice: 'es-ES-AlvaroNeural', speakingRate: 1.1, pitch: 2 }));
+  const legacy = await audioModule(); await legacy.say('Hola');
+  assert.equal(calls, 1); assert.equal(env.clips.size, 1); assert.equal(env.devicePlays(), 0);
 });
 test('invalid audio never poisons persistent cache and a later valid response recovers', async () => {
   const env = environment(); let calls = 0;

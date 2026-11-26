@@ -25,15 +25,15 @@ test('Spark speech plays Spanish directly without Firebase, paid API or MP3 cach
   assert.equal(env.spoken[0].voice, spanish); assert.equal(env.spoken[0].lang, 'es-ES');
   assert.equal(audio.spanishVoices().length, 1);
 });
-test('selected device voice, speaking speed and pitch are applied and saved', async () => {
+test('device fallback uses fixed defaults despite old saved preferences', async () => {
   const voice = { name: 'Paulina', lang: 'es-MX', voiceURI: 'mexico' };
   const env = environment([voice]), audio = await module();
-  audio.setVoiceSettings({ voiceURI: 'mexico', speakingRate: 0.7, pitch: 2 });
+  env.preferences.set('hola-voice', JSON.stringify({ voiceURI: 'mexico', speakingRate: 0.7, pitch: 2 }));
   await audio.say('Buenos días');
-  assert.equal(env.spoken[0].voice, voice); assert.equal(env.spoken[0].rate, 0.7);
-  assert.equal(env.spoken[0].pitch, 2 ** (2 / 12));
-  assert.equal(audio.voiceSettings().voiceURI, 'mexico');
-  const reloaded = await module(); assert.equal(reloaded.voiceSettings().speakingRate, 0.7);
+  assert.equal(env.spoken[0].voice, voice); assert.equal(env.spoken[0].rate, 0.9);
+  assert.equal(env.spoken[0].pitch, 1);
+  assert.equal(audio.voiceSettings().voiceURI, 'auto');
+  const reloaded = await module(); assert.equal(reloaded.voiceSettings().speakingRate, 0.9);
 });
 test('late-loading voices use the Spanish language hint and voice errors have actionable feedback', async () => {
   const env = environment(), audio = await module();
@@ -47,7 +47,7 @@ test('late-loading voices use the Spanish language hint and voice errors have ac
 test('unsupported browsers show a message and legacy Google voice preferences migrate safely', async () => {
   const env = environment(), audio = await module();
   env.preferences.set('hola-voice', JSON.stringify({ voice: 'es-ES-Neural2-A', speakingRate: 1.1, pitch: 0 }));
-  assert.equal(audio.voiceSettings().voiceURI, 'auto'); assert.equal(audio.voiceSettings().speakingRate, 1.1);
+  assert.equal(audio.voiceSettings().voiceURI, 'auto'); assert.equal(audio.voiceSettings().speakingRate, 0.9);
   window.speechSynthesis = undefined;
   await audio.say('Hola'); assert.match(env.messages.at(-1), /지원하지/);
 });
