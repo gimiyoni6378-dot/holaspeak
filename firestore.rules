@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owns(uid) { return request.auth != null && request.auth.uid == uid; }
+    function validProgress(p) {
+      return p.keys().hasOnly(['xp','points','level','xpInLevel','xpToNextLevel','completed','month','streak','review','pronunciationDone','signupPromptSeen','quests'])
+        && p.xp is int && p.xp >= 0 && p.xp <= 10000000
+        && p.points == p.xp && p.level == int(p.xp / 100) + 1
+        && p.xpInLevel == p.xp % 100 && p.xpToNextLevel == 100 - p.xp % 100
+        && p.completed is int && p.completed >= 0 && p.completed <= 10000000
+        && p.month is int && p.month >= 0 && p.month <= 10000000
+        && p.streak is int && p.streak >= 0 && p.streak <= 10000000
+        && p.review is int && p.review >= 0 && p.review <= 10000000
+        && p.pronunciationDone is bool && p.signupPromptSeen is bool
+        && p.quests.keys().hasOnly(['lesson','review','speak'])
+        && p.quests.lesson is bool && p.quests.review is bool && p.quests.speak is bool;
+    }
+    function validUser(d, uid) {
+      return d.keys().hasOnly(['uid','displayName','email','progress','revision','createdAt','updatedAt'])
+        && d.uid == uid && d.displayName is string && d.displayName.size() > 0 && d.displayName.size() <= 80
+        && d.email == request.auth.token.email && validProgress(d.progress)
+        && d.revision is int && d.revision >= 0 && d.createdAt is timestamp && d.updatedAt == request.time;
+    }
+    match /users/{uid} {
+      allow get: if owns(uid);
+      allow list, delete: if false;
+      allow create: if owns(uid) && validUser(request.resource.data, uid)
+        && request.resource.data.revision == 0 && request.resource.data.createdAt == request.time;
+      allow update: if owns(uid) && validUser(request.resource.data, uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress','revision','updatedAt'])
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+  }
+}

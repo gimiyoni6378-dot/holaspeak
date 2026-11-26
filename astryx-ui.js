@@ -13,9 +13,10 @@ import {
 } from '@astryxdesign/core';
 import { Heading } from '@astryxdesign/core/Heading';
 import { themes, defaultThemeSlug, themeModes } from './src/astryx-themes.js';
+import { getSession } from './src/hola-client.js';
 
 const h = htm.bind(React.createElement);
-const HolaTheme = ({ children }) => h`
+export const HolaTheme = ({ children }) => h`
   <${Theme} theme=${themes[defaultThemeSlug]} mode=${themeModes[defaultThemeSlug] || 'light'}>
     ${children}
   </${Theme}>
@@ -51,7 +52,7 @@ function HomeDashboard() {
         <${Stack} direction="horizontal" align="center" justify="between" className="home-welcome">
           <${Stack} gap=${1}>
             <${Text} type="supporting" color="secondary"><span id="today"></span></${Text}>
-            <${Heading} level=${1} className="welcome-title">¡Hola, 민지!</${Heading}>
+            <${Heading} level=${1} className="welcome-title">¡Hola, ${getSession()?.user.name || '학습자'}!</${Heading}>
             <${Text} color="secondary">오늘은 짧은 인사부터 익혀봐요.</${Text}>
           </${Stack}>
           <${Badge} variant="success" label="A1 · 첫걸음" />
@@ -195,4 +196,3 @@ export function mountHome() {
 
 const installMount = document.querySelector('#astryx-install-root');
 if (installMount) createRoot(installMount).render(h`<${InstallCard} />`);
-

@@ -1,2 +1,10 @@
 node_modules/
 themes/hola/*.html
+tts-service/data/
+.env
+.env.*
+!.env.example
+dist/
+.firebase/
+*-debug.log
+.openai/

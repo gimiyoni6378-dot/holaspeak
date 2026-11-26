@@ -1,0 +1,23 @@
+import { test } from 'node:test';
+import { readFile } from 'node:fs/promises';
+import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { normalizeProgress } from '../src/progression.js';
+test('Firestore rules isolate users and validate points, levels and revisions', { skip: !process.env.FIRESTORE_EMULATOR_HOST }, async t => {
+  const environment = await initializeTestEnvironment({ projectId: 'demo-holaspeak', firestore: { rules: await readFile(new URL('../firestore.rules', import.meta.url), 'utf8') } });
+  t.after(() => environment.cleanup());
+  await environment.clearFirestore();
+  const alice = environment.authenticatedContext('alice', { email: 'alice@example.test' }).firestore();
+  const bob = environment.authenticatedContext('bob', { email: 'bob@example.test' }).firestore();
+  const anon = environment.unauthenticatedContext().firestore();
+  const initial = { uid: 'alice', displayName: 'Alice', email: 'alice@example.test', progress: normalizeProgress({ xp: 20 }), revision: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+  await assertSucceeds(setDoc(doc(alice, 'users/alice'), initial));
+  await assertSucceeds(getDoc(doc(alice, 'users/alice')));
+  await assertFails(getDoc(doc(bob, 'users/alice')));
+  await assertFails(getDoc(doc(anon, 'users/alice')));
+  await assertFails(setDoc(doc(bob, 'users/alice'), initial));
+  await assertFails(updateDoc(doc(alice, 'users/alice'), { 'progress.level': 99, revision: 1, updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(doc(alice, 'users/alice'), { 'progress.points': 999, revision: 1, updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(doc(alice, 'users/alice'), { progress: normalizeProgress({ xp: 100 }), revision: 0, updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(doc(alice, 'users/alice'), { progress: normalizeProgress({ xp: 100 }), revision: 1, updatedAt: serverTimestamp() }));
+});

@@ -1,0 +1,120 @@
+import { api } from './hola-client.js';
+export const defaultVoice = { voice: 'es-ES-Neural2-A', speakingRate: 0.9, pitch: 0, languageCode: 'es-ES', audioEncoding: 'MP3', version: 1 };
+export function voiceSettings() { try { return { ...defaultVoice, ...JSON.parse(localStorage.getItem('hola-voice') || '{}') }; } catch { return { ...defaultVoice }; } }
+export function setVoiceSettings(value) { localStorage.setItem('hola-voice', JSON.stringify(value)); }
+export function clipSettings(text, value = voiceSettings()) { return { text: text.trim().normalize('NFC'), voice: value.voice, speakingRate: value.speakingRate, pitch: value.pitch, languageCode: 'es-ES', audioEncoding: 'MP3', version: 1 }; }
+const memory = new Map(), pending = new Map();
+let context, source, playGeneration = 0;
+async function database() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('hola-audio-cache', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('clips');
+    request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+  });
+}
+async function clipCache(key, blob) {
+  const db = await database();
+  try { return await new Promise((resolve, reject) => {
+    const tx = db.transaction('clips', blob ? 'readwrite' : 'readonly'), store = tx.objectStore('clips');
+    let result;
+    if (blob) {
+      store.put({ blob, savedAt: Date.now() }, key);
+      const all = store.getAllKeys(); all.onsuccess = () => { for (const old of all.result.filter(k => k !== key).slice(0, Math.max(0, all.result.length - 150))) store.delete(old); };
+    } else { const request = store.get(key); request.onsuccess = () => { result = request.result?.blob; }; }
+    tx.oncomplete = () => resolve(result); tx.onerror = tx.onabort = () => reject(tx.error);
+  }); } finally { db.close(); }
+}
+function deviceVoice(text, settings) {
+  if (!window.speechSynthesis) throw new Error('이 브라우저는 음성 재생을 지원하지 않아요.');
+  const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'es-ES'; utterance.rate = settings.speakingRate;
+  utterance.pitch = 2 ** (settings.pitch / 12); speechSynthesis.cancel(); speechSynthesis.speak(utterance);
+  window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: '기기 음성으로 재생 중이에요. Google 예시 음성은 로그인과 서버 연결이 필요해요.' }));
+}
+export function stopAudio() { playGeneration++; try { source?.stop(); } catch {} window.speechSynthesis?.cancel(); }
+export async function say(text) {
+  stopAudio(); const generation = playGeneration, settings = clipSettings(text), key = JSON.stringify(settings);
+  try {
+    const Audio = window.AudioContext || window.webkitAudioContext;
+    context ||= new Audio(); await context.resume();
+    if (!memory.has(key)) {
+      let task = pending.get(key);
+      if (!task) {
+        task = (async () => {
+          let blob; try { blob = await clipCache(key); } catch {}
+          if (!blob) { blob = await api('/synthesize', { method: 'POST', body: settings, binary: true }); if (!blob.type.includes('audio') || blob.size > 2000000) throw new Error('Invalid audio'); try { await clipCache(key, blob); } catch {} }
+          const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+          if (memory.size >= 25) memory.delete(memory.keys().next().value);
+          memory.set(key, buffer); return buffer;
+        })();
+        pending.set(key, task);
+      }
+      try { await task; } finally { if (pending.get(key) === task) pending.delete(key); }
+    }
+    if (generation !== playGeneration) return;
+    source = context.createBufferSource(); source.buffer = memory.get(key); source.connect(context.destination); source.start();
+    window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: 'Google 예시 음성을 재생했어요.' }));
+  } catch {
+    if (generation === playGeneration) {
+      try { deviceVoice(text, settings); }
+      catch (error) { window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: error.message })); }
+    }
+  }
+}
+
+export function pcmWav(samples, sourceRate) {
+  const length = Math.floor(samples.length * 16000 / sourceRate);
+  const buffer = new ArrayBuffer(44 + length * 2), v = new DataView(buffer);
+  const str = (offset, text) => [...text].forEach((c, i) => v.setUint8(offset + i, c.charCodeAt(0)));
+  str(0, 'RIFF'); v.setUint32(4, buffer.byteLength - 8, true); str(8, 'WAVE'); str(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, length * 2, true);
+  for (let i = 0; i < length; i++) {
+    // Average each source interval when downsampling instead of dropping samples.
+    const start = Math.floor(i * sourceRate / 16000), end = Math.min(samples.length, Math.max(start + 1, Math.floor((i + 1) * sourceRate / 16000)));
+    let sum = 0; for (let j = start; j < end; j++) sum += samples[j];
+    const sample = Math.max(-1, Math.min(1, sum / (end - start)));
+    v.setInt16(44 + i * 2, sample < 0 ? sample * 32768 : sample * 32767, true);
+  }
+  return new Uint8Array(buffer);
+}
+export async function recordAttempt({ signal, onReady, onAutoStop }) {
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw new Error('HTTPS 또는 localhost에서 마이크를 사용할 수 있어요.');
+  stopAudio();
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+  if (signal.aborted) { stream.getTracks().forEach(t => t.stop()); throw new DOMException('Cancelled', 'AbortError'); }
+  let recorder, audioContext;
+  const chunks = [];
+  try {
+    recorder = new MediaRecorder(stream);
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    await audioContext.resume();
+    if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+  } catch (error) {
+    stream.getTracks().forEach(t => t.stop());
+    if (audioContext) void audioContext.close();
+    throw error;
+  }
+  return new Promise((resolve, reject) => {
+    let timer, cancelled = false;
+    const abort = () => { cancelled = true; if (recorder.state !== 'inactive') recorder.stop(); };
+    const cleanup = () => { clearTimeout(timer); stream.getTracks().forEach(t => t.stop()); signal.removeEventListener('abort', abort); };
+    signal.addEventListener('abort', abort, { once: true });
+    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    recorder.onerror = () => { cleanup(); void audioContext.close(); reject(new Error('녹음하지 못했어요. 마이크를 확인해 주세요.')); };
+    recorder.onstop = async () => {
+      cleanup();
+      try {
+        if (cancelled) throw new DOMException('Cancelled', 'AbortError');
+        const decoded = await audioContext.decodeAudioData(await new Blob(chunks, { type: recorder.mimeType }).arrayBuffer());
+        if (decoded.duration < 0.1 || decoded.duration > 30) throw new Error('0.1~30초로 다시 녹음해 주세요.');
+        const samples = new Float32Array(decoded.length);
+        for (let c = 0; c < decoded.numberOfChannels; c++) { const channel = decoded.getChannelData(c); for (let i = 0; i < samples.length; i++) samples[i] += channel[i] / decoded.numberOfChannels; }
+        resolve(pcmWav(samples, decoded.sampleRate));
+      } catch (error) { reject(error); } finally { void audioContext.close(); }
+    };
+    recorder.start();
+    const stop = () => { if (recorder.state === 'recording') recorder.stop(); };
+    timer = setTimeout(() => { onAutoStop(); stop(); }, 25000);
+    onReady(stop);
+  });
+}
+export function audioBase64(bytes) { let binary = ''; for (const b of bytes) binary += String.fromCharCode(b); return btoa(binary); }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'holaspeak-shell-v18';
+const CACHE_NAME = 'holaspeak-shell-v20';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,12 @@ const APP_SHELL = [
   './app.js',
   './pwa.js',
   './astryx-ui.js',
+  './src/hola-client.js',
+  './src/firebase-backend.js',
+  './src/progression.js',
+  './src/hola-audio.js',
+  './src/hola-features.js',
+  './src/course-content.js',
   './astryx-css-import.js',
   './src/astryx-themes.js',
   './src/themes/hola/hola.js',
@@ -44,6 +50,9 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Never cache identity, private progress or assessments, even on a same-origin API.
+  if (request.headers.has('Authorization') || /\/(auth|me|progress|assessments|synthesize)(\/|$)/.test(url.pathname)) return;
+  if (request.cache === 'no-store') return;
 
   if (request.mode === 'navigate') {
     event.respondWith(
@@ -72,4 +81,3 @@ self.addEventListener('fetch', (event) => {
     }),
   );
 });
-
