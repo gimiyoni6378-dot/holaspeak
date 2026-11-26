@@ -5,7 +5,7 @@ Vercel 팀 `agent-office3`의 Hobby 무료 플랜을 인앱 대시보드에서 �
 ## 서버 구성
 
 - 루트 `api/speech.js`는 Node.js 24 Web API 함수다. `/synthesize`와 `/assessments`를 `vercel.json` rewrite로 전달한다.
-- Firebase Admin SDK가 같은 프로젝트의 ID 토큰을 검증하고 Firestore에 접근한다. Azure 키와 Firebase 서비스 계정은 **서버 환경변수**에만 저장한다.
+- Google 공개 JWKS로 Firebase ID 토큰의 RS256 서명·issuer·audience·만료를 검증한다. Firebase Admin SDK는 서버의 Firestore 접근에 사용한다. Azure 키와 Firebase 서비스 계정은 **서버 환경변수**에만 저장한다.
 - 예시 MP3는 Firestore `_speechAudio`의 최대 500개 고정 해시 슬롯에 저장한다. 슬롯 충돌은 예시를 교체하며, 캐시 키가 일치하는 예시만 반환한다. 캐시 크기는 최대 약 325 MB다. 다른 Firebase 데이터도 동일한 Spark 무료 저장량/읽기/쓰기 할당량을 사용한다.
 - `_speechUsage`의 월/일 카운터를 트랜잭션으로 먼저 예약한다. 모든 사용자 합산 TTS 500,000자/UTC월(SSML 전체 길이로 보수적 차감), 기본 발음 평가 18,000초/UTC월이다. 사용자별 UTC 하루 TTS 5,000자·평가 300초. 시간 초과·실패도 예약량은 차감한다.
 - Firestore 트랜잭션 실패·한도 초과 시 Azure를 호출하지 않는다. 여러 Vercel 인스턴스도 카운터를 공유한다. 예시 생성에는 영구 60초 lease를 사용한다. 이미 생성 중인 예시는 409 안내 후 사용자가 재시도한다.
