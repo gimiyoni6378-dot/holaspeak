@@ -15,6 +15,8 @@ test('Firestore rules isolate users and validate points, levels and revisions', 
   await assertSucceeds(getDoc(doc(alice, 'users/alice')));
   await assertFails(getDoc(doc(bob, 'users/alice')));
   await assertFails(getDoc(doc(anon, 'users/alice')));
+  await assertFails(getDoc(doc(alice, '_ttsAudio/clip')));
+  await assertFails(setDoc(doc(alice, '_ttsUsage/month-2026-11'), { characters: 0 }));
   await assertFails(setDoc(doc(bob, 'users/alice'), initial));
   await assertFails(updateDoc(doc(alice, 'users/alice'), { 'progress.level': 99, revision: 1, updatedAt: serverTimestamp() }));
   await assertFails(updateDoc(doc(alice, 'users/alice'), { 'progress.points': 999, revision: 1, updatedAt: serverTimestamp() }));

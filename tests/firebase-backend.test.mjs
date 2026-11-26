@@ -20,10 +20,12 @@ test('Firebase signup creates a profile once and account data survives later log
   const backend = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
   const alice = await backend.createEmailAccount('Alice', 'alice@example.test', 'password123', { xp: 80 });
   assert.equal(alice.user.name, 'Alice'); assert.equal(alice.progress.xp, 80);
+  assert.equal(await backend.firebaseIdToken(alice.user.id), 'token');
   const result = await backend.firebaseRequest('/progress', { method: 'PUT', body: { progress: { xp: 125 }, revision: 0 } }, alice);
   assert.equal(result.progress.level, 2); assert.equal(result.progress.points, 125);
   await assert.rejects(backend.firebaseRequest('/progress', { method: 'PUT', body: { progress: { xp: 999 }, revision: 0 } }, alice), e => e.status === 409);
   await backend.firebaseRequest('/auth/logout', { method: 'POST' }, alice);
+  await assert.rejects(backend.firebaseIdToken(alice.user.id), e => e.status === 401);
   const bob = await backend.createEmailAccount('Bob', 'bob@example.test', 'password123', {});
   assert.equal(bob.progress.points, 0);
   await assert.rejects(backend.firebaseRequest('/me', {}, alice), e => e.status === 401);

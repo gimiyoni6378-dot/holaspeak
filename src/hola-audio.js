@@ -12,12 +12,13 @@ async function database() {
     request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
   });
 }
-async function clipCache(key, blob) {
+async function clipCache(key, blob, remove = false) {
   const db = await database();
   try { return await new Promise((resolve, reject) => {
-    const tx = db.transaction('clips', blob ? 'readwrite' : 'readonly'), store = tx.objectStore('clips');
+    const tx = db.transaction('clips', blob || remove ? 'readwrite' : 'readonly'), store = tx.objectStore('clips');
     let result;
-    if (blob) {
+    if (remove) store.delete(key);
+    else if (blob) {
       store.put({ blob, savedAt: Date.now() }, key);
       const all = store.getAllKeys(); all.onsuccess = () => { for (const old of all.result.filter(k => k !== key).slice(0, Math.max(0, all.result.length - 150))) store.delete(old); };
     } else { const request = store.get(key); request.onsuccess = () => { result = request.result?.blob; }; }
@@ -40,9 +41,18 @@ export async function say(text) {
       let task = pending.get(key);
       if (!task) {
         task = (async () => {
-          let blob; try { blob = await clipCache(key); } catch {}
-          if (!blob) { blob = await api('/synthesize', { method: 'POST', body: settings, binary: true }); if (!blob.type.includes('audio') || blob.size > 2000000) throw new Error('Invalid audio'); try { await clipCache(key, blob); } catch {} }
-          const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+          let blob, buffer;
+          try { blob = await clipCache(key); } catch {}
+          if (blob) {
+            try { buffer = await context.decodeAudioData(await blob.arrayBuffer()); }
+            catch { blob = null; try { await clipCache(key, null, true); } catch {} }
+          }
+          if (!buffer) {
+            blob = await api('/synthesize', { method: 'POST', body: settings, binary: true });
+            if (!blob.type.includes('audio') || !blob.size || blob.size > 650000) throw new Error('Invalid audio');
+            buffer = await context.decodeAudioData(await blob.arrayBuffer());
+            try { await clipCache(key, blob); } catch {}
+          }
           if (memory.size >= 25) memory.delete(memory.keys().next().value);
           memory.set(key, buffer); return buffer;
         })();
@@ -52,7 +62,7 @@ export async function say(text) {
     }
     if (generation !== playGeneration) return;
     source = context.createBufferSource(); source.buffer = memory.get(key); source.connect(context.destination); source.start();
-    window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: 'Google 예시 음성을 재생했어요.' }));
+    window.dispatchEvent(new CustomEvent('hola:audio-status', { detail: 'Google 예시 음성을 재생했어요. 같은 설정으로 다시 들으면 저장된 음성을 사용해요.' }));
   } catch {
     if (generation === playGeneration) {
       try { deviceVoice(text, settings); }

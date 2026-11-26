@@ -39,6 +39,12 @@ python -m http.server 5173
 
 빌드 산출물은 `dist/`입니다. GitHub Pages에서 저장소 루트를 호스팅해도 동일한 정적 앱이 동작합니다. 일부 기존 레슨 화면은 HTML/DOM 코드이며 새 계정 화면은 React/Astryx입니다. CDN 모듈을 이용하므로 최초 실행에는 네트워크가 필요합니다.
 
+## 2단계: Google TTS 준비
+
+`functions/`에 Firebase 로그인 검증과 Google TTS·Firestore 공유 캐시를 구현했습니다. 브라우저는 문장·음성·속도·음높이별 MP3를 저장합니다. 신규 생성 제한 기본값은 월 100만 자이며 Google의 무료 한도와 앱 자체 제한은 별개입니다.
+
+실제 사용에는 사용자의 결제 설정 확인, Google Text-to-Speech API 활성화와 함수 배포가 필요합니다. [배포 절차·비용·테스트](functions/README.md)를 참고하세요. 아직 함수 주소가 설정되지 않으면 기기 음성을 사용하고 화면에 연결 준비 상태를 표시합니다.
+
 ## 다음 단계
 
-Google TTS와 Azure 발음 평가는 `HOLA_ENABLE_SPEECH = false`로 비활성화했습니다. 회원가입·데이터 저장 검증 후 순서대로 연결합니다. 기존 `tts-service/`는 별도 음성 서버 초안이며 현재 Firebase 계정과 연결되지 않았습니다. Firebase 사용자의 ID 토큰을 해당 서버에서 검증하는 작업이 필요합니다.
+Azure 발음 평가는 `HOLA_ENABLE_SPEECH = false`로 비활성화했습니다. Google TTS 실연결 검증 후 진행합니다. 기존 `tts-service/`는 초기 음성 서버 초안이며 현재 배포 대상은 `functions/`입니다.

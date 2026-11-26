@@ -1,5 +1,11 @@
 # HolaSpeak: 구현 상태와 운영 연결
 
+## 2단계 준비: Firebase 인증을 쓰는 Google TTS
+
+`functions/`의 `tts` HTTPS 함수에 Firebase ID 토큰 검증, 문장·음성·속도·피치·인코딩별 캐시, Firestore 영구 캐시와 사용량 예약을 추가했다. 프런트엔드는 만료된 저장 토큰 대신 SDK에서 갱신한 ID 토큰을 사용한다. TTS 설정과 Azure 평가 표시를 분리했으며 `HOLA_ENABLE_TTS = true`, `HOLA_ENABLE_SPEECH = false`이다. 실제 함수 주소는 배포 성공 후에만 `HOLA_TTS_API_URL`에 설정한다.
+
+Google Neural2 무료 한도는 월 100만 자다. 앱 자체 생성 제한 기본값도 100만 자로 준비했지만, Google 계정의 전체 사용량이나 함수/저장 비용을 대신 제한하지 않는다. 결제 설정 변경이나 클라우드 함수 배포는 아직 하지 않았다. 실제 제공자 호출은 배포 후 검증한다. 상세 절차는 `functions/README.md`를 따른다.
+
 ## 현재 선택: Firebase 회원가입·사용자 데이터 (2026-11-26)
 
 사용자와 협의해 Firebase `holaspeak-ac16d`로 전환했다. 현재 공개 앱의 인증은 Firebase Authentication, 데이터는 Firestore `users/{UID}`이다. Google/이메일 가입, 이메일 인증, 비밀번호 재설정, 계정별 진행 저장 및 100 XP당 레벨 상승을 구현했다. 웹 설정은 `tts-config.js`, Firestore 접근 규칙은 `firestore.rules`, 콘솔 설정 절차는 README를 따른다. Supabase 전용 프로젝트 생성은 무료 활성 프로젝트 한도로 실패했으며 기존 프로젝트는 변경하지 않았다.

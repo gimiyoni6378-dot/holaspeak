@@ -54,6 +54,12 @@ async function account(guest) {
   return { token: await user.getIdToken(), user: { id: user.uid, name: data.displayName, email: user.email || '', emailVerified: user.emailVerified, provider: 'firebase' }, progress: data.progress, revision: data.revision };
 }
 export const restoreFirebase = guest => account(guest);
+export async function firebaseIdToken(uid) {
+  const f = await sdk(); await f.auth.authStateReady();
+  const user = f.auth.currentUser;
+  if (!user || user.uid !== uid) throw Object.assign(new Error('로그인한 뒤 Google 음성을 이용해 주세요.'), { status: 401 });
+  return user.getIdToken(); // Firebase refreshes an expired token before use.
+}
 export async function signInGoogle(guest) {
   const f = await sdk();
   try { const provider = new f.GoogleAuthProvider(); provider.setCustomParameters({ prompt: 'select_account' }); await f.signInWithPopup(f.auth, provider); return await account(guest); } catch (error) { throw authError(error); }

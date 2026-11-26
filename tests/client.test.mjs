@@ -48,3 +48,16 @@ test('PCM conversion emits canonical 16kHz mono WAV from mobile sample rates', a
   assert.equal(wav.toString('ascii', 0, 4), 'RIFF'); assert.equal(wav.readUInt32LE(24), 16000); assert.equal(wav.length, 32044);
   assert.equal(wav.readUInt16LE(22), 1); assert.equal(wav.readUInt16LE(34), 16);
 });
+test('speech requests use a current Firebase token and the dedicated TTS endpoint', async () => {
+  globalThis.window = new EventTarget(); window.HOLA_TTS_API_URL = 'https://voice.test/tts';
+  globalThis.localStorage = storage(); globalThis.sessionStorage = storage();
+  sessionStorage.setItem('hola-session', JSON.stringify({ token: 'expired-token', user: { id: 'firebase-user' } }));
+  let request;
+  globalThis.fetch = async (url, init) => { request = { url, init }; return new Response('mp3', { headers: { 'Content-Type': 'audio/mpeg' } }); };
+  const firebaseSource = originalSource.replace(/^import .*firebase-backend.js';/m, "const isFirebase = () => true, isConfigured = () => true, resendVerification = () => {}, resetPassword = () => {}, firebaseIdToken = async uid => { if(uid !== 'firebase-user') throw new Error('wrong user'); return 'renewed-token'; };").replace("'./progression.js'", JSON.stringify(new URL('../src/progression.js', import.meta.url).href));
+  const client = await import('data:text/javascript;base64,' + Buffer.from(firebaseSource).toString('base64'));
+  await client.api('/synthesize', { method: 'POST', body: { text: 'Hola' }, binary: true });
+  assert.equal(request.url, 'https://voice.test/tts/synthesize');
+  assert.equal(request.init.headers.Authorization, 'Bearer renewed-token');
+  assert.equal(request.init.cache, 'no-store');
+});

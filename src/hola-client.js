@@ -1,4 +1,4 @@
-import { isFirebase, isConfigured, firebaseRequest, restoreFirebase, signInGoogle, signInEmail, createEmailAccount, resendVerification, resetPassword } from './firebase-backend.js';
+import { isFirebase, isConfigured, firebaseRequest, restoreFirebase, signInGoogle, signInEmail, createEmailAccount, resendVerification, resetPassword, firebaseIdToken } from './firebase-backend.js';
 import { normalizeProgress, todayKey } from './progression.js';
 // Public configuration only; provider service credentials stay on the server.
 const apiUrl = () => (window.HOLA_API_URL || '').replace(/\/$/, '');
@@ -17,8 +17,10 @@ export function loadProgress() { return read(storageKey(), {}).progress || read(
 function persistSession() { try { session ? sessionStorage.setItem('hola-session', JSON.stringify(session)) : sessionStorage.removeItem('hola-session'); } catch {} }
 export async function api(path, { method = 'GET', body, token = session?.token, binary = false, signal } = {}) {
   if (isFirebase() && !['/synthesize', '/assessments'].includes(path)) return firebaseRequest(path, { method, body }, session);
-  if (!apiUrl()) throw new Error('계정·음성 서버가 아직 설정되지 않았어요.');
-  const response = await fetch(apiUrl() + path, { method, cache: 'no-store', signal: signal || AbortSignal.timeout(35000), headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+  const endpoint = path === '/synthesize' ? (window.HOLA_TTS_API_URL || apiUrl()).replace(/\/$/, '') : apiUrl();
+  if (!endpoint) throw new Error('Google 음성 서버를 준비 중이에요.');
+  if (isFirebase()) token = await firebaseIdToken(session?.user.id);
+  const response = await fetch(endpoint + path, { method, cache: 'no-store', signal: signal || AbortSignal.timeout(35000), headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     const error = new Error(data.error || (response.status === 401 ? '로그인 시간이 만료됐어요. 로그아웃 후 다시 로그인해 주세요.' : '연결하지 못했어요. 다시 시도해 주세요.'));
