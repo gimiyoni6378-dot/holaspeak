@@ -123,16 +123,16 @@ function waitForAudio(promise, signal, timeout, message, onLate) {
 }
 export async function requestMicrophone(signal) {
   if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
-  return waitForAudio(navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }), signal, 20000, '마이크 권한 응답을 받지 못했어요. Chrome 주소창의 사이트 설정에서 마이크를 허용한 뒤 다시 눌러 주세요.', stopTracks);
+  return waitForAudio(navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }), signal, 20000, '마이크 권한 응답을 받지 못했어요. 마이크 권한 설정 방법을 확인하고 다시 눌러 주세요.', stopTracks);
 }
 export function microphoneError(error) {
   const messages = {
-    NotAllowedError: '마이크 사용이 차단됐어요. Chrome 주소창 왼쪽의 사이트 설정에서 마이크를 허용하고, 기기의 마이크 권한도 확인해 주세요.',
+    NotAllowedError: '마이크 사용이 차단됐어요. 화면에 열린 마이크 권한 안내에 따라 사이트와 기기의 마이크 권한을 확인해 주세요.',
     SecurityError: '브라우저가 마이크 사용을 차단했어요. 이 사이트의 마이크 권한을 확인해 주세요.',
     NotFoundError: '사용할 마이크를 찾지 못했어요. 마이크 연결과 기기 설정을 확인해 주세요.',
     NotReadableError: '마이크를 열지 못했어요. 다른 녹음·통화 앱을 닫고 기기의 마이크 설정을 확인해 주세요.',
     OverconstrainedError: '현재 마이크의 녹음 설정을 사용할 수 없어요. 다른 마이크를 선택해 주세요.',
-    EncodingError: '녹음 파일을 읽지 못했어요. Chrome을 최신 버전으로 업데이트하고 다시 시도해 주세요.',
+    EncodingError: '녹음 파일을 읽지 못했어요. 브라우저를 최신 버전으로 업데이트하고 다시 시도해 주세요.',
   };
   return messages[error.name] || error.message || '마이크를 연결하지 못했어요. 다시 시도해 주세요.';
 }

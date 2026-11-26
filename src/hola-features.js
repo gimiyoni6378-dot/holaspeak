@@ -8,6 +8,7 @@ import { api, getSession, getStatus, loadProgress, subscribe, mountGoogleButton,
 import { saveAssessment } from './firebase-backend.js';
 import { progression, activitySummary } from './progression.js';
 import { say, stopAudio, recordAttempt, audioBase64, microphoneError } from './hola-audio.js';
+import { microphoneHelp } from './microphone-help.js';
 const h = htm.bind(React.createElement);
 function useAccount() { const [, update] = React.useReducer(x => x + 1, 0); React.useEffect(() => subscribe(update), []); return { session: getSession(), ...getStatus() }; }
 function GoogleLogin() {
@@ -73,6 +74,9 @@ function Speaking({ onComplete }) {
   const phrases = [{ value: 'Hola', label: 'Hola · 안녕' }, { value: 'Gracias', label: 'Gracias · 고마워요' }, { value: 'Buenos días', label: 'Buenos días · 좋은 아침이에요' }, { value: 'Buenas noches', label: 'Buenas noches · 안녕히 주무세요' }, { value: 'Por favor', label: 'Por favor · 부탁해요' }, { value: '¿Cómo estás?', label: '¿Cómo estás? · 어떻게 지내요?' }];
   const [phase, setPhase] = React.useState('idle'), [error, setError] = React.useState(''), [result, setResult] = React.useState(null), [unsaved, setUnsaved] = React.useState(null), [saving, setSaving] = React.useState(false);
   const [reference, setReference] = React.useState('Hola'), [audioStatus, setAudioStatus] = React.useState('');
+  const [helpOpen, setHelpOpen] = React.useState(false);
+  const help = microphoneHelp(navigator);
+  const helpId = React.useId();
   const stop = React.useRef(), controller = React.useRef(), owner = React.useRef(getSession());
   React.useEffect(() => () => { controller.current?.abort(); stopAudio(); }, []);
   React.useEffect(() => { const fn = e => setAudioStatus(e.detail); window.addEventListener('hola:audio-status', fn); return () => window.removeEventListener('hola:audio-status', fn); }, []);
@@ -88,14 +92,15 @@ function Speaking({ onComplete }) {
     if (saving || unsaved || phase !== 'idle' || !owner.current) return;
     setError(''); setResult(null); setPhase('permission');
     const active = new AbortController(); controller.current = active;
+    let microphoneReady = false;
     try {
-      const bytes = await recordAttempt({ signal: active.signal, onReady: fn => { stop.current = fn; setPhase('recording'); }, onAutoStop: () => setPhase('assessing') });
+      const bytes = await recordAttempt({ signal: active.signal, onReady: fn => { microphoneReady = true; setHelpOpen(false); stop.current = fn; setPhase('recording'); }, onAutoStop: () => setPhase('assessing') });
       if (active.signal.aborted || getSession() !== owner.current) return;
       setPhase('assessing');
       const item = await api('/assessments', { method: 'POST', body: { reference, audio: audioBase64(bytes) }, signal: AbortSignal.any([active.signal, AbortSignal.timeout(35000)]) });
       if (active.signal.aborted || getSession() !== owner.current) return;
       setResult(item.result); onComplete(); await persist(item); setPhase('idle');
-    } catch (e) { if (!active.signal.aborted) { setError(microphoneError(e)); setPhase('idle'); } }
+    } catch (e) { if (!active.signal.aborted) { setError(microphoneError(e)); if (!microphoneReady) setHelpOpen(true); setPhase('idle'); } }
   };
   return h`<${HolaTheme}><${Stack} gap=${3}>
     <${Heading} level=${2}>듣고 말하기 연습</${Heading}>
@@ -104,7 +109,14 @@ function Speaking({ onComplete }) {
     <${Button} label="예시 음성 듣기" isDisabled=${phase !== 'idle'} onClick=${() => { void say(reference); }} />
     <${Text} role="status" aria-live="polite">${audioStatus}</${Text}>
     <${Text}>마이크로 25초 이내로 말해 주세요. 녹음은 Azure로 전송해 매번 새로 평가하고 저장하지 않아요.</${Text}>
-    <${Text} role="status" aria-live="polite">${phase === 'permission' ? '마이크를 연결하고 있어요. Chrome에 권한 요청이 뜨면 허용을 눌러 주세요.' : phase === 'recording' ? '녹음 중이에요. 말한 뒤 녹음을 끝내 주세요.' : phase === 'assessing' ? '발음을 평가하고 있어요…' : error}</${Text}>
+    <${Text}>처음에는 ‘녹음 시작’을 누른 뒤 마이크 접근 요청에서 ‘허용’을 선택해 주세요.</${Text}>
+    <${Button} variant="ghost" label=${helpOpen ? '마이크 권한 안내 접기' : '마이크 권한 설정 방법'} aria-expanded=${helpOpen} aria-controls=${helpId} onClick=${() => setHelpOpen(value => !value)} />
+    ${helpOpen ? h`<${Stack} id=${helpId} as="section" aria-label=${help.title} gap=${2}>
+      <${Text} weight="semibold">${help.title}</${Text}>
+      <${Stack} as="ol" gap=${2}>${help.steps.map((step, i) => h`<${Stack} as="li" key=${i}><${Text}>${i + 1}. ${step}</${Text}></${Stack}>`)}</${Stack}>
+      <${Text}>권한은 직접 허용해야 해요. HolaSpeak가 기기 설정을 대신 켤 수는 없어요.</${Text}>
+    </${Stack}>` : null}
+    <${Text} role="status" aria-live="polite">${phase === 'permission' ? '마이크를 연결하고 있어요. 권한 요청이 뜨면 ‘허용’을 눌러 주세요. 창이 안 보이면 위의 마이크 권한 설정 방법을 확인해 주세요.' : phase === 'recording' ? '녹음 중이에요. 말한 뒤 녹음을 끝내 주세요.' : phase === 'assessing' ? '발음을 평가하고 있어요…' : error}</${Text}>
     <${Button} label=${phase === 'permission' ? '마이크 연결 중…' : phase === 'recording' ? '녹음 끝내고 평가하기' : phase === 'assessing' ? '발음 평가 중…' : '녹음 시작'} isDisabled=${!owner.current || saving || Boolean(unsaved) || phase === 'permission' || phase === 'assessing'} onClick=${start} />
     ${phase === 'permission' ? h`<${Button} label="마이크 연결 취소" onClick=${() => { controller.current?.abort(); setPhase('idle'); setError('마이크 연결을 취소했어요.'); }} />` : null}
     ${unsaved ? h`<${Button} label="평가 기록 다시 저장" isLoading=${saving} onClick=${() => persist(unsaved)} /><${Text}>다시 저장하면 Azure 평가를 추가 요청하지 않아요. 창을 닫으면 저장하지 못한 기록은 사라져요.</${Text}>` : null}

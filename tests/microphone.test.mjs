@@ -28,7 +28,7 @@ test('microphone permission denial reports actionable help and releases the audi
   await assert.rejects(audio.recordAttempt({ signal: controller.signal }), e => e.name === 'NotAllowedError');
   assert.deepEqual(env.events, ['resume', 'permission']);
   assert.equal(env.closed(), 1); assert.equal(env.started(), 0);
-  assert.match(audio.microphoneError({ name: 'NotAllowedError' }), /Chrome.*사이트 설정/);
+  assert.match(audio.microphoneError({ name: 'NotAllowedError' }), /사이트와 기기의 마이크 권한/);
   assert.match(audio.microphoneError({ name: 'NotFoundError' }), /마이크.*찾지/);
 });
 test('closing during a pending permission request cancels immediately and stops a late microphone grant', async () => {

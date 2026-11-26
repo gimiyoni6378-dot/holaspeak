@@ -1,4 +1,4 @@
-const CACHE_NAME = 'holaspeak-shell-v30';
+const CACHE_NAME = 'holaspeak-shell-v31';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const APP_SHELL = [
   './src/firebase-backend.js',
   './src/progression.js',
   './src/hola-audio.js',
+  './src/microphone-help.js',
   './src/hola-features.js',
   './src/course-content.js',
   './astryx-css-import.js',
