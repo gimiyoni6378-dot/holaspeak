@@ -1,7 +1,7 @@
 'use strict';
 const { createHash } = require('node:crypto');
 function createVoiceStore(db, { monthlyCharacterLimit = 1000000, userDailyLimit = 40, globalDailyLimit = 400 } = {}) {
-  if (![monthlyCharacterLimit, userDailyLimit, globalDailyLimit].every(n => Number.isSafeInteger(n) && n > 0)) throw new Error('Invalid usage limits');
+  if (![monthlyCharacterLimit, userDailyLimit, globalDailyLimit].every(n => Number.isSafeInteger(n) && n > 0) || monthlyCharacterLimit > 1000000) throw new Error('Usage limits must keep the monthly hard cap at or below 1,000,000 characters');
   return {
     async getAudio(key) {
       const doc = await db.collection('_ttsAudio').doc(key).get();
@@ -14,7 +14,8 @@ function createVoiceStore(db, { monthlyCharacterLimit = 1000000, userDailyLimit 
       await db.collection('_ttsAudio').doc(key).set({ audioBase64: audio.toString('base64'), contentType: 'audio/mpeg', createdAt: new Date() });
     },
     async reserveUsage(uid, characters, now = new Date()) {
-      const day = now.toISOString().slice(0, 10), month = day.slice(0, 7);
+      // Google's monthly SKU tiers reset at midnight US Pacific, including DST.
+      const day = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now), month = day.slice(0, 7);
       const userHash = createHash('sha256').update(uid).digest('hex');
       const userRef = db.collection('_ttsUsage').doc(`user-${userHash}-${day}`);
       const dayRef = db.collection('_ttsUsage').doc(`day-${day}`);

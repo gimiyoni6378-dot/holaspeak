@@ -41,7 +41,7 @@ python -m http.server 5173
 
 ## 2단계: Google TTS 준비
 
-`functions/`에 Firebase 로그인 검증과 Google TTS·Firestore 공유 캐시를 구현했습니다. 브라우저는 문장·음성·속도·음높이별 MP3를 저장합니다. 신규 생성 제한 기본값은 월 100만 자이며 Google의 무료 한도와 앱 자체 제한은 별개입니다.
+`functions/`에 Firebase 로그인 검증과 Google TTS·Firestore 공유 캐시를 구현했습니다. 브라우저는 문장·음성·속도·음높이별 MP3를 저장합니다. Google 과금 월 기준 100만 자를 넘기는 신규 생성 요청은 서버에서 거절하며 Google TTS API를 호출하지 않습니다. 저장된 음성은 계속 재생할 수 있습니다. 이 앱의 제한과 Google 결제 계정 전체 사용량은 별개입니다.
 
 실제 사용에는 사용자의 결제 설정 확인, Google Text-to-Speech API 활성화와 함수 배포가 필요합니다. [배포 절차·비용·테스트](functions/README.md)를 참고하세요. 아직 함수 주소가 설정되지 않으면 기기 음성을 사용하고 화면에 연결 준비 상태를 표시합니다.
 

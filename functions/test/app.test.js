@@ -39,3 +39,19 @@ test('Firebase-authenticated TTS persists reusable audio, deduplicates requests 
   fail = false;
   assert.equal((await request({ text: 'Gracias' })).status, 200); assert.equal(generationCalls, 4);
 });
+test('crossing one million characters never calls Google, including simultaneous requests', async t => {
+  let used = 999999, googleCalls = 0;
+  const clips = new Map();
+  const app = createVoiceApp({ allowedOrigins: ['https://hola.test'], verifyToken: async () => ({ uid: 'user' }),
+    store: { getAudio: async key => clips.get(key), putAudio: async (key, data) => clips.set(key, data), reserveUsage: async (_uid, count) => { if (used + count > 1000000) return false; used += count; return true; } },
+    synthesize: async () => { googleCalls++; return Buffer.from('mp3'); },
+  });
+  const server = app.listen(0, '127.0.0.1'); await new Promise(resolve => server.once('listening', resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const request = text => fetch(`http://127.0.0.1:${server.address().port}/synthesize`, { method: 'POST', headers: { Origin: 'https://hola.test', Authorization: 'Bearer token', 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+  assert.equal((await request('ab')).status, 429); assert.equal(googleCalls, 0);
+  const responses = await Promise.all([request('a'), request('b')]);
+  assert.deepEqual(responses.map(r => r.status).sort(), [200, 429]);
+  assert.equal(used, 1000000); assert.equal(googleCalls, 1);
+  assert.equal((await request('c')).status, 429); assert.equal(googleCalls, 1);
+});
