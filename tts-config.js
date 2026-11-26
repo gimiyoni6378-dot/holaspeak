@@ -10,7 +10,7 @@ window.HOLA_FIREBASE_CONFIG = {
 };
 window.HOLA_ENABLE_TTS = true;
 window.HOLA_TTS_PROVIDER = 'azure';
-window.HOLA_TTS_API_URL = ''; // Vercel API URL, after Hobby/F0 setup.
-window.HOLA_ENABLE_SPEECH = false; // Enable only after real microphone smoke test.
-window.HOLA_API_URL = ''; // Same Vercel API URL, no trailing slash.
+window.HOLA_TTS_API_URL = 'https://holaspeak-speech.vercel.app'; // Vercel API URL, after Hobby/F0 setup.
+window.HOLA_ENABLE_SPEECH = true; // Each recording gets a new Azure assessment.
+window.HOLA_API_URL = 'https://holaspeak-speech.vercel.app'; // Same Vercel API URL, no trailing slash.
 window.HOLA_GOOGLE_CLIENT_ID = ''; // Legacy backend only; Firebase handles Google login.

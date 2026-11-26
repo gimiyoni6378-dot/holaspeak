@@ -82,9 +82,12 @@ export function AccountPanel() {
   </${Stack}></${HolaTheme}>`;
 }
 function Speaking({ onComplete }) {
+  const phrases = [{ value: 'Hola', label: 'Hola · 안녕' }, { value: 'Gracias', label: 'Gracias · 고마워요' }, { value: 'Buenos días', label: 'Buenos días · 좋은 아침이에요' }, { value: 'Buenas noches', label: 'Buenas noches · 안녕히 주무세요' }, { value: 'Por favor', label: 'Por favor · 부탁해요' }, { value: '¿Cómo estás?', label: '¿Cómo estás? · 어떻게 지내요?' }];
   const [phase, setPhase] = React.useState('idle'), [error, setError] = React.useState(''), [result, setResult] = React.useState(null), [unsaved, setUnsaved] = React.useState(null), [saving, setSaving] = React.useState(false);
+  const [reference, setReference] = React.useState('Hola'), [audioStatus, setAudioStatus] = React.useState('');
   const stop = React.useRef(), controller = React.useRef(), owner = React.useRef(getSession());
   React.useEffect(() => () => { controller.current?.abort(); stopAudio(); }, []);
+  React.useEffect(() => { const fn = e => setAudioStatus(e.detail); window.addEventListener('hola:audio-status', fn); return () => window.removeEventListener('hola:audio-status', fn); }, []);
   if (window.HOLA_ENABLE_SPEECH !== true || !window.HOLA_API_URL) return h`<${HolaTheme}><${Stack} gap=${3}><${Heading} level=${2}>말하기 연습</${Heading}><${Text}>Azure 말하기 평가를 준비 중이에요. 연결이 완료되면 녹음과 점수 확인을 이용할 수 있어요.</${Text}></${Stack}></${HolaTheme}>`;
   const persist = async item => {
     setSaving(true);
@@ -101,14 +104,17 @@ function Speaking({ onComplete }) {
       const bytes = await recordAttempt({ signal: active.signal, onReady: fn => { stop.current = fn; setPhase('recording'); }, onAutoStop: () => setPhase('assessing') });
       if (active.signal.aborted || getSession() !== owner.current) return;
       setPhase('assessing');
-      const item = await api('/assessments', { method: 'POST', body: { reference: 'Hola', audio: audioBase64(bytes) }, signal: AbortSignal.any([active.signal, AbortSignal.timeout(35000)]) });
+      const item = await api('/assessments', { method: 'POST', body: { reference, audio: audioBase64(bytes) }, signal: AbortSignal.any([active.signal, AbortSignal.timeout(35000)]) });
       if (active.signal.aborted || getSession() !== owner.current) return;
       setResult(item.result); onComplete(); await persist(item); setPhase('idle');
     } catch (e) { if (!active.signal.aborted) { setError(e.name === 'NotAllowedError' ? '마이크 권한을 허용한 뒤 다시 녹음해 주세요.' : e.message); setPhase('idle'); } }
   };
   return h`<${HolaTheme}><${Stack} gap=${3}>
-    <${Heading} level=${2}>한 단어 말하기</${Heading}><${Text} weight="semibold">Hola · 올라 · 안녕</${Text}>
-    <${Button} label="예시 음성 듣기" isDisabled=${phase !== 'idle'} onClick=${() => { void say('Hola'); }} />
+    <${Heading} level=${2}>듣고 말하기 연습</${Heading}>
+    <${Selector} label="연습할 단어·문장" value=${reference} onChange=${value => { stopAudio(); setReference(value); setResult(null); setError(''); setAudioStatus(''); }} options=${phrases} isDisabled=${phase !== 'idle' || saving || Boolean(unsaved)} presentation="adaptive" />
+    <${Text} weight="semibold">${reference}</${Text}>
+    <${Button} label="예시 음성 듣기" isDisabled=${phase !== 'idle'} onClick=${() => { void say(reference); }} />
+    <${Text} role="status" aria-live="polite">${audioStatus}</${Text}>
     <${Text}>마이크로 25초 이내로 말해 주세요. 녹음은 Azure로 전송해 매번 새로 평가하고 저장하지 않아요.</${Text}>
     <${Button} label=${phase === 'recording' ? '녹음 끝내고 평가하기' : '녹음 시작'} isDisabled=${!owner.current || saving || Boolean(unsaved) || phase === 'permission' || phase === 'assessing'} onClick=${start} />
     <${Text} role="status" aria-live="polite">${phase === 'permission' ? '마이크 권한을 확인하고 있어요…' : phase === 'recording' ? '녹음 중이에요. 말한 뒤 녹음을 끝내 주세요.' : phase === 'assessing' ? '발음을 평가하고 있어요…' : error}</${Text}>

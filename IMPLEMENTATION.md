@@ -2,7 +2,7 @@
 
 ## 현재 선택: Firebase Spark + Vercel Hobby + Azure Speech F0
 
-Google/이메일 로그인·출석·계정 기록 복원은 유지한다. Vercel 팀 `agent-office3`의 Hobby 무료 요금제를 인앱 브라우저에서 확인했다. 루트 `api/speech.js`의 Node.js 함수와 `server/` 모듈로 Azure Speech F0의 Neural TTS·기본 발음 평가를 연결한다. Azure 리소스 지역은 사용자가 확인한 `eastus`다. 실제 서비스 키는 아직 서버에 설정하지 않았다.
+Google/이메일 로그인·출석·계정 기록 복원은 유지한다. Vercel 팀 `agent-office3`의 Hobby 무료 요금제를 인앱 브라우저에서 확인했다. 루트 `api/speech.js`의 Node.js 함수와 `server/` 모듈로 Azure Speech F0의 Neural TTS·기본 발음 평가를 연결한다. Azure 리소스 지역은 사용자가 확인한 `eastus`다. 사용자가 Azure 키·Firebase 서비스 계정을 Vercel Secret으로 저장했고 실제 TTS 생성 및 두 번의 신규 발음 평가 응답을 검증했다. API는 https://holaspeak-speech.vercel.app 이다. 개인 평가 규칙은 Firebase 콘솔에 게시했으며 실기기 마이크 확인은 남아 있다.
 
 서버는 Firebase ID 토큰을 검증하고 Firestore `_speechAudio`에 예시 MP3 캐시, `_speechUsage`에 트랜잭션 사용량 카운터·생성 lease를 저장한다. 캐시는 문장·음성·속도·음높이별이며, 녹음은 동일 입력도 매번 새 평가·새 UUID를 사용한다. 사용자별 평가 이력은 기존 Firestore 개인 경로에 저장한다. 녹음과 평가 응답은 서버 캐시에 보관하지 않는다. Firebase Spark·Vercel Hobby·Azure F0를 유지하며 유료 업그레이드는 진행하지 않는다. 환경변수와 실제 검증 절차는 `VERCEL-SETUP.md`를 따른다.
 

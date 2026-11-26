@@ -39,9 +39,9 @@ python -m http.server 5173
 
 빌드 산출물은 `dist/`입니다. GitHub Pages에서 저장소 루트를 호스팅해도 동일한 정적 앱이 동작합니다. 일부 기존 레슨 화면은 HTML/DOM 코드이며 새 계정 화면은 React/Astryx입니다. CDN 모듈을 이용하므로 최초 실행에는 네트워크가 필요합니다.
 
-## 음성: Azure Speech + Firebase Spark (연결 준비)
+## 음성: Azure Speech + Firebase Spark + Vercel Hobby
 
-예시 TTS와 기본 발음 평가는 Azure Speech, 사용자 인증·학습·출석·평가 이력은 Firebase Spark를 사용합니다. Azure 키를 보호할 Vercel Hobby 중계 서버를 루트 `api/`와 `server/`에 준비했습니다. 캐시와 사용량은 기존 Firestore에 저장합니다. Azure 리소스 지역은 `eastus`이며, 서버에 키를 설정하고 실제 요청을 검증하기 전까지 Azure 호출은 비활성입니다. 준비 중에는 기기의 스페인어 음성으로 예시를 듣습니다.
+예시 TTS와 기본 발음 평가는 Azure Speech, 사용자 인증·학습·출석·평가 이력은 Firebase Spark를 사용합니다. Azure 키를 보호할 Vercel Hobby 중계 서버를 루트 `api/`와 `server/`에 준비했습니다. 캐시와 사용량은 기존 Firestore에 저장합니다. Azure 리소스 지역은 `eastus`이며 Vercel Production의 Secret으로 인증 정보를 설정했습니다. 로그인 사용자는 Azure Neural TTS로 예시를 듣고, 선택한 단어·문장을 녹음해 기본 발음 평가를 받을 수 있습니다. 실제 서버 TTS·평가 응답은 검증했고 실기기 마이크 테스트는 남아 있습니다.
 
 [설정과 검증 절차](VERCEL-SETUP.md)를 따릅니다. Azure Speech **F0** 무료 범위는 TTS 월 50만 자, STT 월 5시간이며 서버에서 보수적 사용량 예약과 한도 차단을 적용합니다. Blaze 전환은 필요하지 않습니다. 예시 음성만 설정별 캐시하고, 녹음은 매번 새로 평가합니다. 평가 점수와 문장만 계정 이력에 저장하며 녹음은 저장하지 않습니다.
 

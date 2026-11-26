@@ -2,6 +2,15 @@
 
 Vercel 팀 `agent-office3`의 Hobby 무료 플랜을 인앱 대시보드에서 확인했다. 프로젝트는 별도 `holaspeak-speech`를 사용한다. 기존 `agent-office_93`는 변경하지 않는다. 유료 업그레이드, 유료 DB, 유료 Blob, Cloudflare 계정은 필요하지 않다.
 
+## 배포 확인 (2026-11-26)
+
+- API: `https://holaspeak-speech.vercel.app` (Vercel Hobby, Node.js 24). Git 연결 권한이 없어 서버 소스만 직접 업로드하여 배포했다.
+- Production에 Azure 키·Firebase 서비스 계정 JSON을 사용자가 Secret으로 저장했다. 비밀값은 채팅·저장소에 넣거나 다시 읽지 않았다.
+- `SPEECH_ENABLED=true` 배포에서 실제 Azure Neural TTS MP3 생성 200, 같은 설정 재요청의 동일 MP3 반환 200을 확인했다.
+- 생성된 테스트 예시를 PCM WAV로 바꿔 같은 입력을 두 번 평가했다. 모두 Azure 점수 응답 200과 서로 다른 UUID를 반환했다. 이 점수는 합성된 테스트 음성 결과이며 사용자 마이크 평가 결과가 아니다. 사용한 Firebase 임시 계정은 삭제했다.
+- Firestore의 개인 평가 이력 규칙을 인앱 콘솔에서 게시했다. 본인 경로만 접근하며 음성 캐시·사용량 컬렉션의 클라이언트 접근은 계속 차단한다.
+- 실제 기기의 마이크 권한·녹음·로그아웃 후 재로그인 이력 확인은 사용자 테스트가 남아 있다.
+
 ## 서버 구성
 
 - 루트 `api/speech.js`는 Node.js 24 Web API 함수다. `/synthesize`와 `/assessments`를 `vercel.json` rewrite로 전달한다.
