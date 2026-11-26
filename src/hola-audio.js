@@ -108,21 +108,54 @@ export function pcmWav(samples, sourceRate) {
   }
   return new Uint8Array(buffer);
 }
+const stopTracks = stream => stream?.getTracks().forEach(track => track.stop());
+const closeContext = context => { if (context && context.state !== 'closed') void context.close().catch(() => {}); };
+function waitForAudio(promise, signal, timeout, message, onLate) {
+  return new Promise((resolve, reject) => {
+    let settled = false, timer;
+    const finish = (fn, value) => { if (settled) return; settled = true; clearTimeout(timer); signal.removeEventListener('abort', abort); fn(value); };
+    const abort = () => finish(reject, new DOMException('Cancelled', 'AbortError'));
+    Promise.resolve(promise).then(value => { if (settled) onLate?.(value); else finish(resolve, value); }, error => finish(reject, error));
+    timer = setTimeout(() => finish(reject, new Error(message)), timeout);
+    signal.addEventListener('abort', abort, { once: true });
+    if (signal.aborted) abort();
+  });
+}
+export async function requestMicrophone(signal) {
+  if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+  return waitForAudio(navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }), signal, 20000, '마이크 권한 응답을 받지 못했어요. Chrome 주소창의 사이트 설정에서 마이크를 허용한 뒤 다시 눌러 주세요.', stopTracks);
+}
+export function microphoneError(error) {
+  const messages = {
+    NotAllowedError: '마이크 사용이 차단됐어요. Chrome 주소창 왼쪽의 사이트 설정에서 마이크를 허용하고, 기기의 마이크 권한도 확인해 주세요.',
+    SecurityError: '브라우저가 마이크 사용을 차단했어요. 이 사이트의 마이크 권한을 확인해 주세요.',
+    NotFoundError: '사용할 마이크를 찾지 못했어요. 마이크 연결과 기기 설정을 확인해 주세요.',
+    NotReadableError: '마이크를 열지 못했어요. 다른 녹음·통화 앱을 닫고 기기의 마이크 설정을 확인해 주세요.',
+    OverconstrainedError: '현재 마이크의 녹음 설정을 사용할 수 없어요. 다른 마이크를 선택해 주세요.',
+    EncodingError: '녹음 파일을 읽지 못했어요. Chrome을 최신 버전으로 업데이트하고 다시 시도해 주세요.',
+  };
+  return messages[error.name] || error.message || '마이크를 연결하지 못했어요. 다시 시도해 주세요.';
+}
 export async function recordAttempt({ signal, onReady, onAutoStop }) {
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw new Error('HTTPS 또는 localhost에서 마이크를 사용할 수 있어요.');
+  if (window.isSecureContext === false) throw new Error('HTTPS 주소로 접속해야 마이크를 사용할 수 있어요.');
+  const Audio = window.AudioContext || window.webkitAudioContext;
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder || !Audio) throw new Error('이 브라우저에서 녹음을 사용할 수 없어요. 최신 Chrome 또는 Safari로 사이트를 열어 주세요.');
+  if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
   stopAudio();
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
-  if (signal.aborted) { stream.getTracks().forEach(t => t.stop()); throw new DOMException('Cancelled', 'AbortError'); }
-  let recorder, audioContext;
+  let recorder, audioContext, stream;
   const chunks = [];
   try {
-    recorder = new MediaRecorder(stream);
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    await audioContext.resume();
+    // Unlock audio during the tap, before the asynchronous permission prompt.
+    audioContext = new Audio();
+    const resumed = audioContext.resume();
+    const audioReady = waitForAudio(resumed, signal, 20000, '녹음 오디오 연결이 지연됐어요. 다시 녹음 시작을 눌러 주세요.');
+    void audioReady.catch(() => {}); // Permission denial may finish first.
+    stream = await requestMicrophone(signal);
+    await audioReady;
     if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+    recorder = new window.MediaRecorder(stream);
   } catch (error) {
-    stream.getTracks().forEach(t => t.stop());
-    if (audioContext) void audioContext.close();
+    stopTracks(stream); closeContext(audioContext);
     throw error;
   }
   return new Promise((resolve, reject) => {
@@ -143,10 +176,13 @@ export async function recordAttempt({ signal, onReady, onAutoStop }) {
         resolve(pcmWav(samples, decoded.sampleRate));
       } catch (error) { reject(error); } finally { void audioContext.close(); }
     };
-    recorder.start();
-    const stop = () => { if (recorder.state === 'recording') recorder.stop(); };
-    timer = setTimeout(() => { onAutoStop(); stop(); }, 25000);
-    onReady(stop);
+    try {
+      if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+      recorder.start();
+      const stop = () => { if (recorder.state === 'recording') recorder.stop(); };
+      timer = setTimeout(() => { onAutoStop(); stop(); }, 25000);
+      onReady(stop);
+    } catch (error) { cleanup(); closeContext(audioContext); reject(error); }
   });
 }
 export function audioBase64(bytes) { let binary = ''; for (const b of bytes) binary += String.fromCharCode(b); return btoa(binary); }
