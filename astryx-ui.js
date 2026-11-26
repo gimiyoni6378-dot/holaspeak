@@ -112,7 +112,7 @@ function HomeDashboard() {
               <${Badge} variant="warning" label="7일 목표" />
             </${Stack}>
             <${Stack} direction="horizontal" justify="between" className="week-days">
-              <${Text}>월</${Text}><${Text}>화</${Text}><${Text}>오늘</${Text}><${Text}>목</${Text}><${Text}>금</${Text}><${Text}>토</${Text}><${Text}>일</${Text}>
+              <${Text}>월</${Text}><${Text}>화</${Text}><${Text}>수</${Text}><${Text}>목</${Text}><${Text}>금</${Text}><${Text}>토</${Text}><${Text}>일</${Text}>
             </${Stack}>
             <${Stack} className="week-progress">
               <${ProgressBar} label="이번 주 학습 진행" value=${daysDone} max=${7} hasValueLabel formatValueLabel=${(value) => `${value}일`} variant="success" />

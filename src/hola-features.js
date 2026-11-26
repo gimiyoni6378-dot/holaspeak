@@ -4,8 +4,8 @@ import htm from 'htm';
 import { Stack, Text, Button, Selector, TextInput, ProgressBar } from '@astryxdesign/core';
 import { Heading } from '@astryxdesign/core/Heading';
 import { HolaTheme } from '../astryx-ui.js';
-import { api, getSession, getStatus, loadProgress, subscribe, mountGoogleButton, logout, sync, resolveConflict, loginGoogle, loginEmail, signupEmail, verifyEmail, forgotPassword } from './hola-client.js';
-import { progression } from './progression.js';
+import { api, getSession, getStatus, loadProgress, subscribe, mountGoogleButton, logout, sync, resolveConflict, loginGoogle, loginEmail, signupEmail, verifyEmail, forgotPassword, checkIn } from './hola-client.js';
+import { progression, activitySummary } from './progression.js';
 import { say, stopAudio, recordAttempt, audioBase64, voiceSettings, setVoiceSettings } from './hola-audio.js';
 const h = htm.bind(React.createElement);
 function useAccount() { const [, update] = React.useReducer(x => x + 1, 0); React.useEffect(() => subscribe(update), []); return { session: getSession(), ...getStatus() }; }
@@ -37,6 +37,7 @@ function FirebaseAuth() {
 export function AccountPanel() {
   const speechEnabled = window.HOLA_ENABLE_SPEECH === true;
   const state = useAccount(), [history, setHistory] = React.useState([]), [error, setError] = React.useState('');
+  const attendance = activitySummary(loadProgress().attendanceDates), study = activitySummary(loadProgress().studyDates);
   const [voice, setVoice] = React.useState(voiceSettings), [audioStatus, setAudioStatus] = React.useState('');
   const refresh = async () => { const owner = getSession(); setError(''); try { const data = await api('/assessments'); if (getSession() === owner) setHistory(data.items); } catch (e) { if (getSession() === owner) setError(e.message); } };
   React.useEffect(() => { setHistory([]); if (state.session && speechEnabled) void refresh(); }, [state.session]);
@@ -53,6 +54,13 @@ export function AccountPanel() {
     <${Text} weight="semibold">레벨 ${progression(loadProgress().xp).level} · ${progression(loadProgress().xp).points} 포인트</${Text}>
     <${ProgressBar} label="다음 레벨까지" value=${progression(loadProgress().xp).xpInLevel} max=${100} />
     <${Text}>다음 레벨까지 ${progression(loadProgress().xp).xpToNextLevel} XP · 100 XP마다 레벨이 올라요.</${Text}>
+    <${Heading} level=${2}>오늘의 출석</${Heading}>
+    <${Text}>연속 출석 ${attendance.streak}일 · 누적 출석 ${attendance.total}일</${Text}>
+    <${Button} label=${attendance.today ? '오늘 출석 완료' : '오늘 출석 체크'} isDisabled=${!state.session || attendance.today} onClick=${action(checkIn)} />
+    <${Text}>${state.session ? '한국 시간 자정에 다음 날 출석이 열려요.' : '로그인하면 매일 출석을 남길 수 있어요.'}</${Text}>
+    <${Heading} level=${2}>꾸준한 미션 참여</${Heading}>
+    <${Text}>연속 ${study.streak}일 · 이번 달 ${study.month}일 · 누적 ${study.total}일</${Text}>
+    <${Text}>${study.today ? '오늘 미션에 참여했어요.' : '레슨·복습·게임 중 하나를 완료하면 오늘의 참여가 기록돼요.'}</${Text}>
     <${Text} role="status" aria-live="polite">${state.syncError || (state.busy ? '기록을 연결하고 있어요…' : state.session ? '학습 기록은 계정에 저장돼요. 오프라인 변경은 연결되면 동기화해요.' : '게스트 기록은 현재 기기에 저장돼요.')}</${Text}>
     ${state.conflict ? h`<${Button} label="다른 기기의 기록 불러오기" onClick=${action(() => resolveConflict(false))} /><${Button} label="이 기기의 기록으로 저장하기" onClick=${action(() => resolveConflict(true))} />` : null}
     ${speechEnabled ? h`    <${Heading} level=${2}>예시 음성 설정</${Heading}>

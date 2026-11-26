@@ -3,13 +3,17 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function owns(uid) { return request.auth != null && request.auth.uid == uid; }
     function validProgress(p) {
-      return p.keys().hasOnly(['xp','points','level','xpInLevel','xpToNextLevel','completed','month','streak','review','pronunciationDone','signupPromptSeen','quests'])
+      return p.keys().hasOnly(['xp','points','level','xpInLevel','xpToNextLevel','completed','month','streak','review','pronunciationDone','signupPromptSeen','quests','studyDates','attendanceDates','attendanceStreak','questDate'])
         && p.xp is int && p.xp >= 0 && p.xp <= 10000000
         && p.points == p.xp && p.level == int(p.xp / 100) + 1
         && p.xpInLevel == p.xp % 100 && p.xpToNextLevel == 100 - p.xp % 100
         && p.completed is int && p.completed >= 0 && p.completed <= 10000000
         && p.month is int && p.month >= 0 && p.month <= 10000000
         && p.streak is int && p.streak >= 0 && p.streak <= 10000000
+        && p.studyDates is list && p.studyDates.size() <= 10000
+        && p.attendanceDates is list && p.attendanceDates.size() <= 10000
+        && p.attendanceStreak is int && p.attendanceStreak >= 0 && p.attendanceStreak <= 10000
+        && p.questDate is string && p.questDate.size() == 10
         && p.review is int && p.review >= 0 && p.review <= 10000000
         && p.pronunciationDone is bool && p.signupPromptSeen is bool
         && p.quests.keys().hasOnly(['lesson','review','speak'])

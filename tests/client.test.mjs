@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 const originalSource = await readFile(new URL('../src/hola-client.js', import.meta.url), 'utf8');
-const source = originalSource.replace(/^import .*firebase-backend.js';/m, 'const isFirebase = () => false, resendVerification = () => {}, resetPassword = () => {};');
+const source = originalSource.replace(/^import .*firebase-backend.js';/m, 'const isFirebase = () => false, resendVerification = () => {}, resetPassword = () => {};').replace("'./progression.js'", JSON.stringify(new URL('../src/progression.js', import.meta.url).href));
 function storage() { const data = new Map(); return { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), removeItem: k => data.delete(k) }; }
 test('guest migration, account separation, offline retry and explicit conflict resolution', async () => {
   globalThis.window = new EventTarget(); window.HOLA_API_URL = 'https://api.test'; window.HOLA_GOOGLE_CLIENT_ID = 'client';
@@ -22,6 +22,7 @@ test('guest migration, account separation, offline retry and explicit conflict r
     return respond({ progress: remote, revision, user: { id: active } });
   };
   const client = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+  assert.throws(() => client.checkIn(), /로그인/);
   client.saveProgress({ xp: 20 }); await client.login('a');
   assert.equal(client.loadProgress().xp, 20); assert.equal(JSON.parse(localStorage.getItem('hola')).xp, undefined);
   online = false; client.saveProgress({ xp: 30 }); await new Promise(resolve => setTimeout(resolve, 0));
@@ -33,6 +34,10 @@ test('guest migration, account separation, offline retry and explicit conflict r
   await client.logout(); assert.equal(client.getSession(), null); assert.equal(client.loadProgress().xp, undefined);
   await client.login('b'); assert.equal(client.loadProgress().xp, 0);
   assert.equal(JSON.parse(localStorage.getItem('hola-user:a')).progress.xp, 99);
+  client.checkIn(); await new Promise(resolve => setTimeout(resolve, 0));
+  client.checkIn(); await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(client.loadProgress().attendanceDates.length, 1);
+  assert.equal(JSON.parse(localStorage.getItem('hola-user:a')).progress.attendanceDates, undefined);
 });
 test('PCM conversion emits canonical 16kHz mono WAV from mobile sample rates', async () => {
   globalThis.window = new EventTarget();

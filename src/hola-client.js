@@ -1,4 +1,5 @@
 import { isFirebase, isConfigured, firebaseRequest, restoreFirebase, signInGoogle, signInEmail, createEmailAccount, resendVerification, resetPassword } from './firebase-backend.js';
+import { normalizeProgress, todayKey } from './progression.js';
 // Public configuration only; provider service credentials stay on the server.
 const apiUrl = () => (window.HOLA_API_URL || '').replace(/\/$/, '');
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
@@ -26,6 +27,7 @@ export async function api(path, { method = 'GET', body, token = session?.token, 
   return response.status === 204 ? null : binary ? response.blob() : response.json();
 }
 export function saveProgress(progress) {
+  progress = normalizeProgress(progress);
   const previous = read(storageKey(), {});
   write(storageKey(), { progress, revision: previous.revision ?? session?.revision ?? 0, dirty: Boolean(session) });
   notify();
@@ -154,3 +156,9 @@ export const loginEmail = (email, password) => authenticate(guest => signInEmail
 export const signupEmail = (name, email, password) => authenticate(guest => createEmailAccount(name, email, password, guest));
 export const verifyEmail = resendVerification;
 export const forgotPassword = resetPassword;
+export function checkIn() {
+  if (!session) throw new Error('출석을 저장하려면 먼저 로그인해 주세요.');
+  const progress = loadProgress(), today = todayKey();
+  saveProgress({ ...progress, attendanceDates: [...(progress.attendanceDates || []), today] });
+  window.dispatchEvent(new Event('hola:progress-loaded'));
+}
